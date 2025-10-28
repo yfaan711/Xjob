@@ -1,0 +1,15 @@
+package com.yfaan.xjob.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.yfaan.xjob.dto.LoginFormDTO;
+import com.yfaan.xjob.dto.Result;
+import com.yfaan.xjob.entity.User;
+
+import javax.servlet.http.HttpSession;
+
+public interface IUserService extends IService<User> {
+    //发送短信验证码
+    Result sendCode(String phone);
+    //登录功能
+    Result login(LoginFormDTO loginForm);
+}
