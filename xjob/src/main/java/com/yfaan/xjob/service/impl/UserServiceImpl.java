@@ -118,4 +118,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.expire(LOGIN_USER_KEY+token, LOGIN_USER_TTL, TimeUnit.SECONDS);//设置登录有效期
         return token;
     }
+
+    public Result logout(String token){
+        //删除redis中的用户信息
+        stringRedisTemplate.delete(LOGIN_USER_KEY+token);
+        return Result.ok("已退出登录");
+    }
 }

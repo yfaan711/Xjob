@@ -265,16 +265,35 @@ const handleMenu = async (menuId) => {
   console.log('菜单点击:', menuId)
   
   if (menuId === 'logout') {
+    // 从localStorage获取token
+    const token = localStorage.getItem('token');
+    
     try {
-      const result = await logout()
-      console.log('退出登录结果:', result)
-      if (result.success) {
-        // 退出成功，可以清除本地存储并跳转到登录页
-        console.log('退出登录成功')
-        // 这里可以添加路由跳转逻辑
+      // 无论是否有token，都执行登出逻辑
+      
+      // 调用登出接口，传递token
+      if (token) {
+        const result = await logout(token)
+        console.log('退出登录结果:', result)
       }
+      
+      // 清除本地存储的token
+      localStorage.removeItem('token')
+      
+      // 清除用户信息
+      currentUser.value = null
+      
+      console.log('退出登录成功')
+      
+      // 刷新页面
+      window.location.reload()
     } catch (error) {
       console.error('退出登录失败:', error)
+      
+      // 即使后端登出失败，也要清除前端状态
+      localStorage.removeItem('token')
+      currentUser.value = null
+      window.location.reload()
     }
   }
 }

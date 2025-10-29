@@ -12,4 +12,6 @@ public interface IUserService extends IService<User> {
     Result sendCode(String phone);
     //登录功能
     Result login(LoginFormDTO loginForm);
+    //登出功能
+    Result logout(String token);
 }

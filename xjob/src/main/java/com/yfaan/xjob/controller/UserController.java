@@ -48,10 +48,9 @@ public class UserController {
      * 登出功能
      * @return 无
      */
-    @PostMapping("/logout")
-    public Result logout(){
-        // TODO 实现登出功能
-        return Result.fail("功能未完成");
+    @PostMapping("/logout/{token}")
+    public Result logout(@PathVariable("token") String token){
+        return userService.logout(token);
     }
 
     // 获取当前登录用户信息
@@ -77,6 +76,7 @@ public class UserController {
     }
 
     // TODO 新增userInfo
+
 
     // TODO 修改userInfo
 }

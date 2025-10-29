@@ -77,26 +77,37 @@ export const login = async (loginForm) => {
 
 /**
  * 用户登出
+ * @param {string} token - 用户登录令牌
  * @returns {Promise<Object>} 响应数据
  */
-export const logout = async () => {
+export const logout = async (token) => {
   try {
-    const response = await fetch('/api/user/logout', {
+    console.log('发送登出请求，token:', token);
+    const response = await fetch(`/api/user/logout/${token}`, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'authorization': token // 修改为小写的authorization字段，且不需要Bearer前缀
       },
       credentials: 'include'
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `登出失败，状态码: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('登出响应:', data);
+    return data;
   } catch (error) {
     console.error('登出失败:', error);
-    throw error;
+    // 确保返回标准格式的错误对象，方便前端统一处理
+    throw {
+      success: false,
+      errorMsg: error.message || '登出失败，请稍后重试',
+      data: null
+    };
   }
 };
 
