@@ -3,6 +3,8 @@ package com.yfaan.xjob.controller;
 import com.yfaan.xjob.dto.LoginFormDTO;
 import com.yfaan.xjob.dto.Result;
 import com.yfaan.xjob.dto.UserDTO;
+import com.yfaan.xjob.dto.UserInfoDTO;
+import com.yfaan.xjob.entity.User;
 import com.yfaan.xjob.entity.UserInfo;
 import com.yfaan.xjob.service.IUserInfoService;
 import com.yfaan.xjob.service.IUserService;
@@ -31,6 +33,7 @@ public class UserController {
     //RequestParam用于从 HTTP 请求的 URL 参数里获取值
     //session 负责在服务器端存储用户的会话信息，cookie 则在客户端（浏览器）存储相关标识
     public Result sendCode(@RequestParam("phone") String phone) {
+        //通过 @RequestParam 从 URL 参数中获取手机号码
         log.info("收到验证码请求，手机号: {}", phone);  // 添加这行
         return userService.sendCode(phone);
     }
@@ -42,24 +45,36 @@ public class UserController {
     @PostMapping("/login")
     //@RequestBody用于从 HTTP 请求体中获取数据
     public Result login(@RequestBody LoginFormDTO loginForm){
+        //通过 @RequestBody 从请求体中获取登录表单数据
         return userService.login(loginForm);
     }
     /**
      * 登出功能
      * @return 无
      */
-    @PostMapping("/logout/{token}")
-    public Result logout(@PathVariable("token") String token){
-        return userService.logout(token);
+    @PostMapping("/logout")
+    public Result logout(){
+        String token = UserHolder.getToken();
+        Result result = userService.logout(token);
+        // 登出后清除ThreadLocal中的用户信息和token
+        UserHolder.removeUser();
+        UserHolder.removeToken();
+        log.info("用户已登出");
+        return result;
     }
-
-    // 获取当前登录用户信息
+    //通过 @PathVariable 从 URL 路径中获取 token
+    /**
+     * 获取当前登录用户信息
+     * */
     @GetMapping("/me")
     public Result me(){
         UserDTO user = UserHolder.getUser();
         return Result.ok(user);
     }
-    // 获取当前登录用户并查询其信息
+
+    /**
+     * 获取当前登录用户并查询其详细信息
+     * */
     @GetMapping("/info/{id}")
     //@PathVariable用于从 URL 中获取变量
     public Result info(@PathVariable("id") Long userId){
@@ -75,8 +90,19 @@ public class UserController {
         return Result.ok(info);
     }
 
-    // TODO 新增userInfo
+    /**
+     * 更新当前登录用户基本信息
+     * */
+    @PostMapping("/update")
+    public Result update(@RequestBody UserDTO userDTO){
+        return userService.update(userDTO);
+    }
 
-
-    // TODO 修改userInfo
+    /**
+     * 更新当前登录用户详细信息
+     * */
+    @PostMapping("/info/update")
+    public Result updateInfo(@RequestBody UserInfoDTO userInfoDTO) {
+        return userInfoService.update(userInfoDTO);
+    }
 }

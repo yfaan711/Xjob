@@ -1,6 +1,7 @@
 package com.yfaan.xjob.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -8,61 +9,58 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * <p>
- *
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-24
- */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@TableName("tb_user_info")
-public class UserInfo implements Serializable {
+@TableName("tb_job")
+public class Job implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 主键，用户id
+     * 主键
      */
-    @TableId(value = "user_id", type = IdType.ASSIGN_ID)
-    private Long userId;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
 
     /**
-     * 城市名称
+     * 用户id
      */
-    private String city;
+    @TableField("user_id")
+    private Integer userId; // 确保使用Integer类型与数据库保持一致
 
     /**
-     * 个人介绍，不要超过128个字符
+     * 职位名称
+     */
+    private String job;
+
+    /**
+     * 技能要求
+     */
+    private String skill;
+
+    /**
+     * 价格
+     */
+    private BigDecimal price;
+
+    /**
+     * 工作介绍
      */
     private String introduce;
 
     /**
-     * 粉丝数量
+     * 工作时长
      */
-    private Integer fans;
+    private String workDuration;
 
     /**
-     * 关注的人的数量
+     * 工作城市
      */
-    private Integer followee;
-
-    /**
-     * 性别，0：男，1：女
-     */
-    private Boolean gender;
-
-    /**
-     * 生日
-     */
-    private LocalDate birthday;
-
+    private String workCity;
 
     /**
      * 创建时间
@@ -73,6 +71,5 @@ public class UserInfo implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
 
 }

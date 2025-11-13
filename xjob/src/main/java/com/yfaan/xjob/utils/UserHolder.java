@@ -21,4 +21,19 @@ public class UserHolder {
     public static void removeUser(){
         tl.remove();
     }
+
+    // 用于存储当前用户的token
+    private static final ThreadLocal<String> tokenTL = new ThreadLocal<>();
+
+    public static void setToken(String token) {
+        tokenTL.set(token);
+    }
+
+    public static String getToken() {
+        return tokenTL.get();
+    }
+
+    public static void removeToken() {
+        tokenTL.remove();
+    }
 }

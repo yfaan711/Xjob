@@ -1,5 +1,12 @@
 <template>
   <div class="login-container">
+    <!-- 关闭按钮 -->
+    <button class="close-btn" @click="handleClose">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6L18 18" stroke="#999" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
     <!-- 顶部品牌区域 -->
     <div class="brand-section">
       <div class="logo-container">
@@ -113,7 +120,7 @@ import { ref, reactive } from 'vue'
 import { sendCode, login } from '../api/user'
 
 // 定义emit事件
-const emit = defineEmits(['login-success'])
+const emit = defineEmits(['login-success', 'close'])
 
 // 登录表单数据
 const formData = reactive({
@@ -143,6 +150,12 @@ const toggleLoginType = () => {
 // 切换密码显示状态
 const togglePassword = () => {
   showPassword.value = !showPassword.value
+}
+
+// 处理关闭登录
+const handleClose = () => {
+  // 触发关闭事件，通知父组件
+  emit('close')
 }
 
 // 验证手机号
@@ -270,11 +283,36 @@ const handleLogin = async () => {
 .login-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 100vh;
+  justify-content: flex-start;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 30px 20px 20px;
+  padding: 20px;
   color: white;
+  position: relative;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* 关闭按钮样式 */
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 
 /* 品牌区域 */
@@ -474,7 +512,7 @@ const handleLogin = async () => {
 /* 新用户说明 */
 .new-user-note {
   text-align: center;
-  margin: 12px 0 16px;
+  margin: 8px 0 12px;
 }
 
 .note-text {
@@ -486,7 +524,7 @@ const handleLogin = async () => {
 /* 切换登录方式 */
 .switch-login {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .switch-text {
@@ -559,66 +597,124 @@ const handleLogin = async () => {
 /* 手机端适配 */
 @media (max-width: 768px) {
   .login-container {
-    padding: 25px 16px 20px;
+    padding: 16px 12px;
+    min-height: auto;
+  }
+  
+  .close-btn {
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .brand-section {
+    margin-bottom: 16px;
+  }
+  
+  .logo-container {
+    margin-bottom: 8px;
   }
   
   .logo {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .logo-text {
-    font-size: 28px;
-  }
-  
-  .app-name {
-    font-size: 26px;
-  }
-  
-  .slogan {
-    font-size: 15px;
-  }
-  
-  .login-form {
-    padding: 25px 20px;
-    border-radius: 20px;
-  }
-  
-  .input {
+    width: 50px;
     height: 50px;
-    font-size: 16px;
-  }
-  
-  .login-btn {
-    height: 52px;
-  }
-}
-
-/* 小屏幕手机适配 */
-@media (max-width: 480px) {
-  .login-container {
-    padding: 20px 14px 15px;
-  }
-  
-  .logo {
-    width: 56px;
-    height: 56px;
+    border-radius: 14px;
   }
   
   .logo-text {
-    font-size: 26px;
-  }
-  
-  .app-name {
     font-size: 24px;
   }
   
+  .app-name {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  
+  .slogan {
+    font-size: 12px;
+  }
+  
   .login-form {
-    padding: 22px 18px;
+    padding: 20px 16px;
+    border-radius: 16px;
   }
   
   .form-title {
-    font-size: 20px;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  
+  .input-group {
+    margin-bottom: 14px;
+  }
+  
+  .input {
+    height: 44px;
+    font-size: 15px;
+    padding: 0 45px 0 40px;
+    border-radius: 12px;
+  }
+  
+  .login-btn {
+    height: 46px;
+    font-size: 15px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+  
+  .new-user-note {
+    margin: 6px 0 10px;
+  }
+  
+  .note-text {
+    font-size: 11px;
+  }
+  
+  .switch-text {
+    font-size: 13px;
+  }
+  
+  .copyright {
+    font-size: 10px;
+  }
+}
+
+/* 小屏幕手机优化 */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 12px 10px;
+  }
+  
+  .logo {
+    width: 46px;
+    height: 46px;
+  }
+  
+  .logo-text {
+    font-size: 22px;
+  }
+  
+  .app-name {
+    font-size: 18px;
+  }
+  
+  .login-form {
+    padding: 16px 14px;
+  }
+  
+  .form-title {
+    font-size: 17px;
+  }
+  
+  .input {
+    height: 42px;
+    font-size: 14px;
+  }
+  
+  .login-btn {
+    height: 44px;
+    font-size: 14px;
   }
 }
 </style>

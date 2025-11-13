@@ -2,11 +2,10 @@
   <div class="plaza-container">
     <!-- 顶部导航栏 -->
     <header class="plaza-header">
-      <!-- 城市选择器 -->
-      <button class="city-selector" @click="showCitySelector">
-        <span class="current-city">{{ currentCity }}</span>
-        <svg class="icon dropdown-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M7 10l5 5 5-5z"/>
+      <!-- AI助手按钮 -->
+      <button class="ai-assistant-btn" @click="showAIAssistant">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
         </svg>
       </button>
       
@@ -77,7 +76,6 @@ export default {
   },
   data() {
     return {
-      currentCity: '北京',
       selectedTag: '推荐',
       showBackToTop: false,
       recommendTags: [
@@ -163,11 +161,12 @@ export default {
     window.removeEventListener('scroll', this.handleScroll)
   },
   methods: {
-    showCitySelector() {
-      console.log('显示城市选择器')
-    },
     showSearchPage() {
       console.log('显示搜索页面')
+    },
+    showAIAssistant() {
+      // 触发父组件显示AI助手页面
+      this.$emit('show-ai-assistant')
     },
     showPublishPage() {
       console.log('显示发布页面')
@@ -210,22 +209,7 @@ export default {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.city-selector {
-  display: flex;
-  align-items: center;
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: #333;
-  cursor: pointer;
-}
 
-.dropdown-icon {
-  width: 14px;
-  height: 14px;
-  margin-left: 4px;
-  color: #666;
-}
 
 .search-btn {
   background: none;
@@ -241,6 +225,31 @@ export default {
   width: 24px;
   height: 24px;
   color: #666;
+}
+
+/* AI助手按钮样式 */
+.ai-assistant-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.ai-assistant-btn:active {
+  transform: scale(0.95);
+}
+
+.ai-assistant-btn .icon {
+  width: 20px;
+  height: 20px;
+  color: white;
 }
 
 
@@ -328,10 +337,6 @@ export default {
 @media (max-width: 768px) {
   .plaza-header {
     padding: 10px 14px;
-  }
-  
-  .city-selector {
-    font-size: 15px;
   }
   
   .search-btn .icon {

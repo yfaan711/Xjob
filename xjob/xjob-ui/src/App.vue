@@ -1,16 +1,23 @@
 <template>
   <div class="app-container">
-    <!-- 登录状态条件渲染 -->
-    <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
-    
-    <!-- 已登录状态下的主应用界面 -->
-    <div v-else>
+    <!-- 主应用界面（登录和未登录都显示） -->
+    <div>
       <!-- 页面容器 -->
       <div class="pages-container">
-        <Plaza v-if="currentPage === 'square'" />
+        <Plaza v-if="currentPage === 'square'" @show-ai-assistant="showAIAssistant" />
+        <TaskList v-else-if="currentPage === 'tasks'" />
         <AIAssistant v-else-if="currentPage === 'ai'" />
         <Messages v-else-if="currentPage === 'message'" />
-        <Profile v-else-if="currentPage === 'profile'" />
+        <Profile 
+          v-else-if="currentPage === 'profile'" 
+          :isLoggedIn="isLoggedIn" 
+          :key="`profile-${loginStateChange}`"
+          @logout="handleLogout" 
+          @goToLogin="goToLogin" 
+        />
+        <EditProfile v-else-if="currentPage === 'edit-profile'" @navigate="navigateTo" />
+        <MyJobs v-else-if="currentPage === 'my-jobs'" @navigate="navigateTo" />
+        <MyOrders v-else-if="currentPage === 'my-orders'" @navigate="navigateTo" />
       </div>
       
       <!-- 底部导航栏 -->
@@ -20,16 +27,37 @@
         @show-publish="showPublishDialog"
       />
     </div>
+    
+    <!-- 登录组件（按需显示，全屏覆盖） -->
+      <div v-if="showLogin" class="login-overlay">
+        <Login @login-success="handleLoginSuccess" @close="handleLoginClose" />
+      </div>
+    
+    <!-- 底部登录提示弹窗 -->
+    <div v-if="!isLoggedIn && showLoginPrompt" class="login-prompt">
+      <div class="prompt-content">
+        <span>登录后享受更多功能</span>
+        <div class="prompt-actions">
+          <button class="prompt-cancel" @click="closeLoginPrompt">暂不登录</button>
+          <button class="prompt-login" @click="goToLogin">立即登录</button>
+        </div>
+      </div>
+      <button class="prompt-close" @click="closeLoginPrompt">×</button>
+    </div>
   </div>
 </template>
 
 <script>
 import Plaza from './components/Plaza.vue'
-import AIAssistant from './components/AIAssistant.vue'
+import TaskList from './components/TaskList.vue'
 import Messages from './components/Messages.vue'
 import Profile from './components/Profile.vue'
+import EditProfile from './components/EditProfile.vue'
 import BottomNavigation from './components/BottomNavigation.vue'
 import Login from './components/Login.vue'
+import AIAssistant from './components/AIAssistant.vue'
+import MyJobs from './components/MyJobs.vue'
+import MyOrders from './components/MyOrders.vue'
 
 // 导入全局样式文件
 import './styles/global.css'
@@ -38,23 +66,53 @@ export default {
   name: 'App',
   components: {
     Plaza,
-    AIAssistant,
+    TaskList,
     Messages,
     Profile,
+    EditProfile,
     BottomNavigation,
-    Login
+    Login,
+    AIAssistant,
+    MyJobs,
+    MyOrders
   },
   data() {
     return {
       // 默认显示广场页面
       currentPage: 'square',
       // 登录状态管理，默认未登录
-      isLoggedIn: false
+      isLoggedIn: false,
+      // 是否显示登录组件
+      showLogin: false,
+      // 是否显示登录提示弹窗
+      showLoginPrompt: false,
+      // 登录状态变更标志，用于触发子组件更新
+      loginStateChange: 0
     }
+  },
+  mounted() {
+    // 组件挂载时不自动检查登录状态，避免一启动就显示登录状态
+    // 如果需要恢复登录状态，可以通过用户主动触发
+    console.log('应用启动，默认未登录状态')
+    
+    // 短暂延迟后显示登录提示
+    setTimeout(() => {
+      this.showLoginPrompt = true
+    }, 1000)
   },
   methods: {
     // 页面切换方法
     changePage(pageName) {
+      this.currentPage = pageName
+    },
+    
+    // 显示AI助手页面
+    showAIAssistant() {
+      this.currentPage = 'ai'
+    },
+    
+    // 导航到特定页面（支持从组件内部调用）
+    navigateTo(pageName) {
       this.currentPage = pageName
     },
     
@@ -69,7 +127,37 @@ export default {
     // 处理登录成功
     handleLoginSuccess() {
       this.isLoggedIn = true
-      console.log('用户登录成功')
+      this.showLogin = false
+      this.showLoginPrompt = false
+      // 更新登录状态变更标志，触发子组件更新
+      this.loginStateChange++
+      console.log('用户登录成功，已更新登录状态')
+    },
+    
+    // 处理退出登录
+    handleLogout() {
+      this.isLoggedIn = false
+      this.currentPage = 'square'
+      console.log('用户退出登录')
+    },
+    
+    // 跳转到登录页面
+    goToLogin() {
+      console.log('App组件处理goToLogin事件 - 开始')
+      // 直接设置showLogin为true，确保登录界面显示
+      this.showLogin = true
+      this.showLoginPrompt = false
+      console.log('App组件处理goToLogin事件 - 完成，showLogin状态:', this.showLogin)
+    },
+    
+    // 处理登录关闭
+    handleLoginClose() {
+      this.showLogin = false
+    },
+    
+    // 关闭登录提示
+    closeLoginPrompt() {
+      this.showLoginPrompt = false
     }
   }
 }
@@ -107,6 +195,36 @@ html, body {
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+/* 登录界面覆盖层样式 */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* 确保登录组件不会太宽 */
+.login-overlay > .login-container {
+  max-width: 400px;
+  width: 100%;
+  margin: 20px auto;
+  box-sizing: border-box;
+}
+
+/* 确保登录表单内容紧凑 */
+.login-overlay .login-form {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pages-container {
@@ -158,6 +276,74 @@ button {
 }
 
 /* 输入框通用样式 */
+
+/* 登录提示弹窗样式 */
+.login-prompt {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-cancel {
+  background: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.prompt-login {
+  background: white;
+  color: #333;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.prompt-close {
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 20px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
 input, textarea {
   font-family: inherit;
   font-size: inherit;

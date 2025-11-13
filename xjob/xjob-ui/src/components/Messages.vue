@@ -45,11 +45,15 @@
         :class="{ unread: chat.unreadCount > 0 }"
         @click="openChat(chat.id)"
       >
+        <!-- 头像和在线状态 -->
         <div class="avatar-container">
           <img :src="chat.avatar" alt="{{ chat.name }}" class="chat-avatar" />
           <span v-if="chat.isOnline" class="online-indicator"></span>
+          <!-- 消息角标 -->
+          <span v-if="chat.unreadCount > 0" class="unread-badge">{{ chat.unreadCount }}</span>
         </div>
         
+        <!-- 聊天内容 -->
         <div class="chat-content">
           <div class="chat-header">
             <span class="chat-name">{{ chat.name }}</span>
@@ -61,8 +65,6 @@
             <span class="message-text">{{ chat.lastMessage }}</span>
           </div>
         </div>
-        
-        <span v-if="chat.unreadCount > 0" class="unread-badge">{{ chat.unreadCount }}</span>
       </button>
     </div>
     
@@ -343,6 +345,7 @@ export default {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  background-color: #f5f5f5;
 }
 
 .chat-item {
@@ -350,81 +353,77 @@ export default {
   align-items: center;
   padding: 12px 16px;
   background-color: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
-  height: 80px;
+  transition: all 0.2s ease;
+  min-height: 72px;
   box-sizing: border-box;
-  position: relative;
   width: 100%;
-  max-width: none;
-  border-radius: 12px;
-  margin: 4px 0;
+  border-radius: 0;
+  margin: 0;
   cursor: pointer;
-}
-
-.chat-item:hover {
-  background-color: rgba(102, 126, 234, 0.03);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transform: translateY(-1px);
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .chat-item:active {
-  background-color: rgba(102, 126, 234, 0.06);
-  transform: translateY(0);
-}
-
-.chat-item:active {
-  background-color: #f5f5f5;
+  background-color: #f9f9f9;
 }
 
 .chat-item.unread {
-  background-color: #fff8f9;
+  background-color: #fff;
 }
 
 .avatar-container {
   position: relative;
   margin-right: 12px;
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
 }
 
 .chat-avatar {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid transparent;
-  background: linear-gradient(white, white) padding-box,
-              linear-gradient(135deg, #667eea, #764ba2) border-box;
-  transition: all 0.3s ease;
-}
-
-.chat-item:hover .chat-avatar {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border: none;
+  background: none;
 }
 
 .online-indicator {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   background-color: #4caf50;
   border: 2px solid #fff;
   border-radius: 50%;
 }
 
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  background-color: #ff2442;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 1px 2px rgba(255, 36, 66, 0.3);
+}
+
 .chat-content {
   flex: 1;
   min-width: 0;
-  max-width: calc(100% - 120px);
-  height: 50px;
+  height: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 2px 0;
+  justify-content: center;
 }
 
 .chat-header {
@@ -432,11 +431,12 @@ export default {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  margin-bottom: 4px;
 }
 
 .chat-name {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
@@ -456,49 +456,36 @@ export default {
   align-items: center;
   width: 100%;
   min-height: 20px;
-  transition: all 0.3s ease;
 }
 
 .sender {
-  font-size: 13px;
-  color: #667eea;
-  font-weight: 500;
+  font-size: 14px;
+  color: #999;
+  font-weight: normal;
   margin-right: 4px;
   flex-shrink: 0;
 }
 
 .message-text {
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  transition: color 0.3s ease;
 }
 
-.chat-item:hover .message-text {
-  color: #667eea;
-}
-
-.unread-badge {
-  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-  color: white;
-  font-size: 11px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 5px;
-  flex-shrink: 0;
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3);
-  animation: pulse 2s infinite;
+/* 消息小红点动画效果 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 36, 66, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(255, 36, 66, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 36, 66, 0);
+  }
 }
 
 @keyframes pulse {

@@ -12,6 +12,7 @@ import com.yfaan.xjob.entity.User;
 import com.yfaan.xjob.mapper.UserMapper;
 import com.yfaan.xjob.service.IUserService;
 import com.yfaan.xjob.utils.RegexUtils;
+import com.yfaan.xjob.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -110,18 +111,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //6.保存用户信息到redis
         String token = UUID.randomUUID().toString(true);
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-        Map<String,Object> userMap = BeanUtil.beanToMap(userDTO,new HashMap<>(),
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
                 CopyOptions.create()
-                        .setIgnoreNullValue( true)
-                        .setFieldValueEditor((fieldName,fieldValue)->fieldValue.toString()));
-        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY+token,userMap);
-        stringRedisTemplate.expire(LOGIN_USER_KEY+token, LOGIN_USER_TTL, TimeUnit.SECONDS);//设置登录有效期
+                        .setIgnoreNullValue(true)
+                        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+        stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.SECONDS);//设置登录有效期
         return token;
     }
 
-    public Result logout(String token){
+    @Override
+    public Result logout(String token) {
         //删除redis中的用户信息
-        stringRedisTemplate.delete(LOGIN_USER_KEY+token);
-        return Result.ok("已退出登录");
+        if (token != null) {
+            stringRedisTemplate.delete(LOGIN_USER_KEY + token);
+            log.debug("已退出登录");
+            return Result.ok("已退出登录");
+        }
+        return Result.fail("无效的token");
+    }
+
+    @Override
+    public Result update(UserDTO userDTO) {
+        // 1. 获取当前登录用户
+        UserDTO currentUser = UserHolder.getUser();
+        if (currentUser == null) {
+            return Result.fail("请先登录");
+        }
+        // 2. 获取数据库中的用户实体
+        User user = getById(currentUser.getId());
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        // 3. 更新用户信息
+        user.setNickName(userDTO.getNickName());
+        //user.setIcon(userDTO.getIcon());
+        updateById(user); // 写入数据库
+        
+        // 4. 构造更新后的 DTO
+        UserDTO updatedUserDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        
+        // 5. 更新 Redis 中的用户信息
+        String token = UserHolder.getToken();
+        if (token != null) {
+            Map<String, Object> userMap = BeanUtil.beanToMap(
+                    updatedUserDTO, new HashMap<>(),
+                    CopyOptions.create()
+                            .setIgnoreNullValue(true)
+                            .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString())
+            );
+            stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        }
+
+        // 6. 返回更新后的 DTO
+        return Result.ok(updatedUserDTO);
     }
 }

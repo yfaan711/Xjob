@@ -15,23 +15,29 @@
           <path d="M8 12L11 15L16 10" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span class="nav-text">广场</span>
+      <span class="nav-text">主页</span>
     </div>
     
     <div 
       class="nav-item" 
-      :class="{ active: currentPage === 'ai' }" 
-      @click="switchPage('ai')"
+      :class="{ active: currentPage === 'tasks' }" 
+      @click="switchPage('tasks')"
     >
       <div class="nav-icon">
-        <svg v-if="currentPage !== 'ai'" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M9 9L15 15M9 15L15 9M5 5H19C20.1046 5 21 5.89543 21 7V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7C3 5.89543 3.89543 5 5 5Z" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg v-if="currentPage !== 'tasks'" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M8 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V10C20 8.89543 19.1046 8 18 8H16" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 8V6C16 4.89543 15.1046 4 14 4H8C6.89543 4 6 4.89543 6 6V8" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 13L11 13" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 17L13 17" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M9 9L15 15M9 15L15 9M5 5H19C20.1046 5 21 5.89543 21 7V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7C3 5.89543 3.89543 5 5 5Z" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 6H6C4.89543 6 4 6.89543 4 8V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V10C20 8.89543 19.1046 8 18 8H16" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 8V6C16 4.89543 15.1046 4 14 4H8C6.89543 4 6 4.89543 6 6V8" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 13L11 13" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 17L13 17" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span class="nav-text">AI助手</span>
+      <span class="nav-text">技能广场</span>
     </div>
     
     <!-- 发布按钮 - 改为普通导航项 -->

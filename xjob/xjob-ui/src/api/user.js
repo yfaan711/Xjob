@@ -83,7 +83,7 @@ export const login = async (loginForm) => {
 export const logout = async (token) => {
   try {
     console.log('发送登出请求，token:', token);
-    const response = await fetch(`/api/user/logout/${token}`, {
+    const response = await fetch('/api/user/logout', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -117,22 +117,35 @@ export const logout = async (token) => {
  */
 export const getCurrentUser = async () => {
   try {
+    // 从localStorage获取token
+    const token = localStorage.getItem('token');
+    console.log('获取当前用户信息请求');
+    
     const response = await fetch('/api/user/me', {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'authorization': token // 添加认证信息
       },
       credentials: 'include'
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `获取用户信息失败，状态码: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('获取用户信息响应:', data);
+    return data;
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    throw error;
+    // 确保返回标准格式的错误对象，方便前端统一处理
+    throw {
+      success: false,
+      errorMsg: error.message || '获取用户信息失败，请稍后重试',
+      data: null
+    };
   }
 };
 
@@ -143,21 +156,116 @@ export const getCurrentUser = async () => {
  */
 export const getUserInfo = async (userId) => {
   try {
+    // 从localStorage获取token
+    const token = localStorage.getItem('token');
+    console.log('获取用户详细信息请求，用户ID:', userId);
+    
     const response = await fetch(`/api/user/info/${userId}`, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'authorization': token // 添加认证信息
       },
       credentials: 'include'
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `获取用户详情失败，状态码: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('获取用户详情响应:', data);
+    return data;
   } catch (error) {
     console.error('获取用户详情失败:', error);
-    throw error;
+    // 确保返回标准格式的错误对象，方便前端统一处理
+    throw {
+      success: false,
+      errorMsg: error.message || '获取用户详情失败，请稍后重试',
+      data: null
+    };
+  }
+};
+
+/**
+ * 更新用户基本信息（nickname, avatar, role）
+ * @param {Object} userData - 用户数据
+ * @returns {Promise<Object>} 响应数据
+ */
+export const updateUserInfo = async (userData) => {
+  try {
+    // 从localStorage获取token
+    const token = localStorage.getItem('token');
+    console.log('更新用户基本信息请求:', userData);
+    
+    const response = await fetch('/api/user/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'authorization': token // 添加认证信息
+      },
+      body: JSON.stringify(userData),
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `更新用户基本信息失败，状态码: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('更新用户基本信息响应:', data);
+    return data;
+  } catch (error) {
+    console.error('更新用户基本信息失败:', error);
+    // 确保返回标准格式的错误对象，方便前端统一处理
+    throw {
+      success: false,
+      errorMsg: error.message || '更新用户基本信息失败，请稍后重试',
+      data: null
+    };
+  }
+};
+
+/**
+ * 更新用户详细信息（city, introduce, gender, birthday）
+ * @param {Object} profileData - 个人资料数据
+ * @returns {Promise<Object>} 响应数据
+ */
+export const updateUserProfile = async (profileData) => {
+  try {
+    // 从localStorage获取token
+    const token = localStorage.getItem('token');
+    console.log('更新用户详细信息请求:', profileData);
+    
+    const response = await fetch('/api/user/info/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'authorization': token // 添加认证信息
+      },
+      body: JSON.stringify(profileData),
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `更新用户详细信息失败，状态码: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('更新用户详细信息响应:', data);
+    return data;
+  } catch (error) {
+    console.error('更新用户详细信息失败:', error);
+    // 确保返回标准格式的错误对象，方便前端统一处理
+    throw {
+      success: false,
+      errorMsg: error.message || '更新用户详细信息失败，请稍后重试',
+      data: null
+    };
   }
 };
