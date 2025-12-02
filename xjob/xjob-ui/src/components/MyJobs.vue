@@ -64,7 +64,7 @@
             <p class="job-experience" v-if="job.experience">从业时间: {{ job.experience }}年</p>
             <p class="job-price" v-if="job.price">单价: ¥{{ job.price }}/次</p>
             <div v-if="job.location && job.location.length > 0" class="job-location">
-              <span v-for="(city, index) in parseJsonArray(job.location)" :key="index" class="location-tag">
+              <span v-for="(city, index) in parseLocation(job.location)" :key="index" class="location-tag">
                 {{ city }}
               </span>
             </div>
@@ -134,20 +134,27 @@
           </div>
           
           <div class="form-group">
-            <label class="form-label">主要工作城市 (最多3个，用逗号分隔)</label>
-            <input 
-              type="text" 
-              v-model="formData.citiesInput" 
-              class="form-input" 
-              placeholder="请输入主要工作城市，用逗号分隔"
-              @keydown.enter.prevent="handleCitiesInput"
-              @blur="handleCitiesInput"
-            />
-            <span v-if="formData.cities.length >= 3" class="city-limit-hint">已达到最大城市数量(3个)</span>
-            <div class="city-tags" v-if="formData.cities && formData.cities.length > 0">
+            <label class="form-label">主要工作城市 (最多3个)</label>
+            <div v-for="(city, index) in formData.cities" :key="index" class="city-selector-item">
+              <el-cascader
+                size="large"
+                :options="options"
+                v-model="formData.cities[index]"
+                @change="handleCityChange"
+                placeholder="请选择城市">
+              </el-cascader>
+              <button type="button" @click="removeCity(index)" class="remove-city">×</button>
+            </div>
+            <button 
+              v-if="formData.cities.length < 3" 
+              type="button" 
+              @click="addCityField" 
+              class="add-city-btn">
+              + 添加城市
+            </button>
+            <div class="city-tags-preview" v-if="formData.cities && formData.cities.length > 0">
               <span v-for="(city, index) in formData.cities" :key="index" class="city-tag">
-                {{ city }}
-                <button type="button" @click="removeCity(index)" class="remove-tag">×</button>
+                {{ getCityLabel(city) }}
               </span>
             </div>
           </div>
@@ -176,6 +183,7 @@
 
 <script>
 import { getJobs, createJob, updateJob, deleteJob } from '../api/job.js'
+import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
   name: 'MyJobs',
@@ -192,6 +200,7 @@ export default {
       messageText: '',
       messageType: 'error', // 'success' 或 'error'
       messageTimer: null,
+      options: provinceAndCityData,
       formData: {
         id: '',
         title: '',
@@ -259,6 +268,59 @@ export default {
           // 确保解析结果是数组
           if (Array.isArray(parsed)) {
             return parsed;
+          } else {
+            // 如果不是数组，将其包装成数组
+            return [parsed];
+          }
+        } catch (e) {
+          // 如果JSON解析失败，按逗号分割字符串
+          return value.split(',').map(item => item.trim()).filter(item => item);
+        }
+      }
+      
+      // 其他情况返回空数组
+      return [];
+    },
+    
+    // 解析位置信息
+    parseLocation(value) {
+      // 如果是数组，直接返回
+      if (Array.isArray(value)) {
+        // 如果数组元素是字符串，尝试解析每个元素
+        return value.map(item => {
+          if (typeof item === 'string' && item.startsWith('[')) {
+            try {
+              return JSON.parse(item).join('/');
+            } catch (e) {
+              return item;
+            }
+          }
+          return item;
+        });
+      }
+      
+      // 如果是字符串，尝试解析
+      if (typeof value === 'string') {
+        // 如果是空字符串，返回空数组
+        if (!value.trim()) {
+          return [];
+        }
+        
+        try {
+          // 尝试解析JSON
+          const parsed = JSON.parse(value);
+          // 确保解析结果是数组
+          if (Array.isArray(parsed)) {
+            return parsed.map(item => {
+              if (typeof item === 'string' && item.startsWith('[')) {
+                try {
+                  return JSON.parse(item).join('/');
+                } catch (e) {
+                  return item;
+                }
+              }
+              return item;
+            });
           } else {
             // 如果不是数组，将其包装成数组
             return [parsed];
@@ -376,7 +438,7 @@ export default {
         skillsInput: '',
         price: '',
         experience: '',
-        cities: [],
+        cities: [], // 初始化为空数组
         citiesInput: '',
         description: ''
       }
@@ -386,6 +448,50 @@ export default {
     // 编辑业务
     editJob(job) {
       this.editingJob = job
+      
+      // 处理技能数据
+      let skills = []
+      try {
+        // 处理技能数据
+        if (job.skill) {
+          if (Array.isArray(job.skill)) {
+            // 如果已经是数组，直接使用
+            skills = job.skill
+          } else if (typeof job.skill === 'string') {
+            // 如果是字符串，尝试解析为数组
+            if (job.skill.startsWith('[')) {
+              skills = JSON.parse(job.skill)
+            } else {
+              // 如果不是JSON数组格式，作为单个技能处理
+              skills = [job.skill.trim()]
+            }
+            // 确保是数组
+            if (!Array.isArray(skills)) {
+              skills = []
+            }
+          }
+        }
+        // 兼容旧的skills字段
+        else if (job.skills) {
+          if (Array.isArray(job.skills)) {
+            skills = job.skills
+          } else if (typeof job.skills === 'string') {
+            if (job.skills.startsWith('[')) {
+              skills = JSON.parse(job.skills)
+            } else {
+              skills = [job.skills.trim()]
+            }
+            if (!Array.isArray(skills)) {
+              skills = []
+            }
+          }
+        }
+      } catch (e) {
+        console.error('解析技能数据失败:', e)
+        // 出错时使用空数组
+        skills = []
+      }
+      
       // 处理城市数据
       let cities = []
       try {
@@ -414,56 +520,40 @@ export default {
         cities = []
       }
       
-      // 处理技能数据
-      let skills = []
-      try {
-        // 处理技能数据
-        if (job.skills) {
-          if (Array.isArray(job.skills)) {
-            // 如果已经是数组，直接使用
-            skills = job.skills
-          } else if (typeof job.skills === 'string') {
-            // 如果是字符串，尝试解析为数组
-            if (job.skills.startsWith('[')) {
-              skills = JSON.parse(job.skills)
-            } else {
-              // 如果不是JSON数组格式，作为单个技能处理
-              skills = [job.skills.trim()]
-            }
-            // 确保是数组
-            if (!Array.isArray(skills)) {
-              skills = []
-            }
-          }
+      // 转换城市数据为级联选择器所需的格式
+      const formattedCities = cities.map(cityStr => {
+        // 如果城市数据已经是数组格式，直接返回
+        if (Array.isArray(cityStr)) {
+          // 如果是完整的省市数组，直接返回
+          return cityStr;
         }
-      } catch (e) {
-        console.error('解析技能数据失败:', e)
-        // 出错时使用空数组
-        skills = []
-      }
+        
+        // 如果是字符串格式，尝试匹配到级联选择器的数据
+        // 这里简化处理，实际应用中可能需要更复杂的匹配逻辑
+        // 为了确保编辑时能显示已有数据，我们至少返回一个空数组
+        return [];
+      })
       
       // 添加调试信息
       console.log('编辑业务数据:', job)
-      console.log('提取的从业时间:', job.workDuration || job.experience)
+      console.log('提取的技能数据:', skills)
       console.log('提取的城市数据:', cities)
+      console.log('格式化后的城市数据:', formattedCities)
       
       // 确保从业时间是字符串类型
       const experienceValue = job.workDuration !== undefined && job.workDuration !== null ? String(job.workDuration) : 
                             (job.experience !== undefined ? String(job.experience) : '')
       
-      // 确保citiesInput正确初始化
-      const citiesInputValue = cities && cities.length > 0 ? cities.join(', ') : ''
-      
       this.formData = {
         id: job.id,
-        title: job.title || job.job || '', // 兼容job字段
+        title: job.job || job.title || '', // 兼容job字段
         skills: skills,
-        skillsInput: skills && skills.length > 0 ? skills.join(', ') : '',
+        skillsInput: '',
         price: job.price !== undefined ? String(job.price) : '',
         experience: experienceValue,
-        cities: cities,
-        citiesInput: citiesInputValue,
-        description: job.description || job.introduce || ''
+        cities: formattedCities,
+        citiesInput: '',
+        description: job.introduce || job.description || ''
       }
       this.showForm = true
     },
@@ -512,18 +602,25 @@ export default {
     
     // 提交表单
     async submitForm() {
-      // 更新技能标签和城市标签
+      // 更新技能标签
       this.updateSkills()
-      this.updateCities()
       
       this.isSubmitting = true
       try {
+        // 格式化城市数据以发送到后端
+        const formDataToSend = {
+          ...this.formData,
+          cities: this.formData.cities.map(cityCodes => 
+            cityCodes.map(code => codeToText[code]).join('/')
+          )
+        }
+        
         if (!this.editingJob) {
           // 添加新业务
-          await createJob(this.formData)
+          await createJob(formDataToSend)
         } else {
           // 更新现有业务
-          await updateJob(this.formData)
+          await updateJob(formDataToSend)
         }
         
         // 刷新列表
@@ -610,6 +707,25 @@ export default {
       this.formData.cities.splice(index, 1)
     },
     
+    // 处理城市变更
+    handleCityChange(value) {
+      // 城市变更处理已在 v-model 中自动完成
+      console.log('城市变更:', value)
+    },
+    
+    // 获取城市标签
+    getCityLabel(cityCodes) {
+      if (!cityCodes || cityCodes.length === 0) return ''
+      
+      // 根据 element-china-area-data 的规则来获取城市名称
+      return cityCodes.map(code => codeToText[code]).join('/')
+    },
+    
+    // 添加城市字段
+    addCityField() {
+      this.formData.cities.push([])
+    },
+    
     // 显示错误消息
     showErrorMessage(message) {
       this.messageText = message
@@ -651,7 +767,7 @@ export default {
         skillsInput: '',
         price: '',
         experience: '',
-        cities: [],
+        cities: [], // 初始化为空数组
         citiesInput: '',
         description: ''
       }
@@ -670,6 +786,59 @@ export default {
   background-color: #f8f8f8;
   min-height: 100vh;
   padding-bottom: 20px;
+}
+
+/* 城市选择器样式 */
+.city-selector-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.city-selector-item .el-cascader {
+  flex: 1;
+}
+
+.remove-city {
+  background: none;
+  border: none;
+  color: #ff4d4f;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: 10px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-city-btn {
+  background-color: #f0f8ff;
+  color: #1989fa;
+  border: 1px dashed #1989fa;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.city-tags-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.city-tag {
+  background-color: #fff7e6;
+  color: #fa8c16;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* 消息提示弹窗样式 */

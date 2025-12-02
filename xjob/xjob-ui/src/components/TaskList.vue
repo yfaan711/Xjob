@@ -2,7 +2,7 @@
   <div class="task-list-container">
     <!-- 顶部导航栏 -->
     <header class="task-header">
-      <h1 class="task-title">技能广场</h1>
+      <h1 class="task-title">业务广场</h1>
     </header>
     
     <!-- 筛选栏 -->
@@ -10,18 +10,34 @@
       <div class="filter-scroll">
         <!-- 城市筛选 -->
         <div class="filter-item" @click="toggleCityFilter">
-          <span class="filter-label">{{ selectedCity || '城市' }}</span>
+          <span class="filter-label">{{ selectedCityLabel || '城市' }}</span>
           <svg class="filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M6 9L12 15L18 9" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         
-        <!-- 其他筛选项可以在这里添加 -->
+        <!-- 搜索框 -->
+        <div class="search-container">
+          <input 
+            v-model="searchKeyword" 
+            @input="handleSearchInput"
+            @keyup.enter="performSearch"
+            class="search-input" 
+            placeholder="搜索你想要查询的业务..."
+            type="text"
+          />
+          <button @click="performSearch" class="search-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="#999" stroke-width="2"/>
+              <path d="M21 21L16.65 16.65" stroke="#999" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     
     <!-- 城市筛选面板 -->
-    <div v-if="showCityFilter" class="filter-panel" :class="{ active: showCityFilter }">
+    <div v-if="showCityFilter" class="city-filter-dropdown">
       <div class="filter-panel-header">
         <h3 class="filter-panel-title">选择城市</h3>
         <button class="filter-panel-close" @click="showCityFilter = false">
@@ -31,18 +47,23 @@
         </button>
       </div>
       
-      <div class="filter-options">
-        <div 
-          v-for="city in cities" 
-          :key="city"
-          class="filter-option"
-          @click="selectCity(city)"
-        >
-          <span class="option-label">{{ city }}</span>
-          <svg v-if="selectedCity === city" class="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="#667eea"/>
-          </svg>
-        </div>
+      <!-- 使用级联选择器 -->
+      <div class="cascader-container">
+        <el-cascader
+          v-model="selectedCity"
+          :options="cityOptions"
+          @change="handleCityChange"
+          placeholder="请选择城市"
+          clearable
+          filterable
+          size="large"
+          style="width: 100%; padding: 16px 20px;">
+        </el-cascader>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="reset-btn" @click="resetCityFilter">重置</button>
+        <button class="confirm-btn" @click="confirmCityFilter">确定</button>
       </div>
     </div>
     
@@ -69,7 +90,12 @@
         
         <!-- 任务内容 -->
         <div class="task-content">
-          <h3 class="task-title">{{ task.title }}</h3>
+          <div class="task-header-row">
+            <h3 class="task-title">{{ task.title }}</h3>
+            <div class="task-skills-inline" v-if="task.skills && task.skills.length > 0">
+              <span v-for="(skill, index) in task.skills" :key="index" class="skill-tag-inline">{{ skill }}</span>
+            </div>
+          </div>
           <p class="task-description">{{ task.description }}</p>
         </div>
         
@@ -81,7 +107,7 @@
             <span class="price-unit">/小时</span>
           </div>
           <div class="task-location">
-            {{ task.location }}
+            {{ formatLocation(task.location) }}
           </div>
         </div>
       </div>
@@ -113,6 +139,7 @@
 
 <script>
 import { getAllJobs } from '../api/job.js'
+import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
   name: 'TaskList',
@@ -124,12 +151,12 @@ export default {
       pageSize: 10,
       hasMore: true,
       showCityFilter: false,
-      selectedCity: '',
-      cities: [
-        '北京', '上海', '广州', '深圳', '杭州', '南京', '苏州', '天津', 
-        '成都', '武汉', '西安', '重庆', '青岛', '大连', '厦门', '福州'
-      ],
-      defaultAvatar: 'https://picsum.photos/200/200?random=1'
+      selectedCity: [], // 级联选择器使用数组
+      selectedCityLabel: '', // 显示在筛选按钮上的城市标签
+      cityOptions: provinceAndCityData, // 使用 element-china-area-data 提供的数据
+      defaultAvatar: 'https://picsum.photos/200/200?random=1',
+      searchKeyword: '', // 搜索关键词
+      searchTimer: null // 搜索防抖定时器
     }
   },
   mounted() {
@@ -145,6 +172,47 @@ export default {
       event.target.src = this.defaultAvatar
     },
     
+    // 格式化城市显示
+    formatLocation(location) {
+      if (Array.isArray(location)) {
+        return location.join(' / ')
+      }
+      return location
+    },
+    
+    // 处理城市选择变更
+    handleCityChange(val) {
+      console.log('城市选择变更:', val)
+      // 城市选择变更时更新标签
+      if (val && val.length > 0) {
+        // 可以根据需要处理城市选择变更
+      }
+    },
+    
+    // 重置城市筛选
+    resetCityFilter() {
+      this.selectedCity = []
+      this.selectedCityLabel = ''
+      this.showCityFilter = false
+      // 重新加载数据
+      this.loadTasks(true)
+    },
+    
+    // 确认城市筛选
+    confirmCityFilter() {
+      // 获取选择的城市标签
+      if (this.selectedCity && this.selectedCity.length > 0) {
+        // 使用 codeToText 来获取城市名称
+        this.selectedCityLabel = this.selectedCity.map(code => codeToText[code]).join(' / ')
+      } else {
+        this.selectedCityLabel = ''
+      }
+      
+      this.showCityFilter = false
+      // 重新加载数据
+      this.loadTasks(true)
+    },
+    
     // 加载任务数据
     async loadTasks(reset = false) {
       if (this.loading) return
@@ -152,19 +220,6 @@ export default {
       this.loading = true
       
       try {
-        // 如果是重置，重置页码和任务列表
-        if (reset) {
-          this.currentPage = 1
-          this.tasks = []
-          this.hasMore = true
-        }
-        
-        // 如果没有更多数据，不再请求
-        if (!this.hasMore) {
-          this.loading = false
-          return
-        }
-        
         // 调用API获取分页数据
         const response = await getAllJobs(this.currentPage, this.pageSize)
         
@@ -178,24 +233,29 @@ export default {
                 if (job.workCity.startsWith('[')) {
                   const cities = JSON.parse(job.workCity)
                   if (Array.isArray(cities) && cities.length > 0) {
-                    location = cities[0] // 取第一个城市
+                    // 修改：显示所有城市，而不是只显示第一个
+                    location = cities
                   }
                 } else {
-                  location = job.workCity
+                  location = [job.workCity]
                 }
+              } else if (Array.isArray(job.workCity) && job.workCity.length > 0) {
+                location = job.workCity
               }
             } catch (e) {
               console.error('解析城市数据失败:', e)
             }
             
-            // 解析技能数据
+            // 解析业务数据
             let skills = []
             try {
               if (typeof job.skill === 'string' && job.skill) {
                 skills = JSON.parse(job.skill)
+              } else if (Array.isArray(job.skill)) {
+                skills = job.skill
               }
             } catch (e) {
-              console.error('解析技能数据失败:', e)
+              console.error('解析业务数据失败:', e)
             }
             
             return {
@@ -216,8 +276,36 @@ export default {
           
           // 如果有城市筛选条件，进行筛选
           let filteredTasks = newTasks
-          if (this.selectedCity) {
-            filteredTasks = newTasks.filter(task => task.location.includes(this.selectedCity))
+          if (this.selectedCity && this.selectedCity.length > 0) {
+            // 获取选择的城市名称
+            const selectedCityName = codeToText[this.selectedCity[this.selectedCity.length - 1]]
+            // 筛选包含该城市的数据
+            filteredTasks = newTasks.filter(task => {
+              if (Array.isArray(task.location)) {
+                return task.location.some(city => city.includes(selectedCityName))
+              }
+              return task.location.includes(selectedCityName)
+            })
+          }
+          
+          // 如果有搜索关键词，进行搜索过滤
+          if (this.searchKeyword) {
+            const keyword = this.searchKeyword.toLowerCase()
+            filteredTasks = filteredTasks.filter(task => {
+              // 检查标题、描述、技能和城市是否包含关键词
+              const titleMatch = task.title && task.title.toLowerCase().includes(keyword)
+              const descriptionMatch = task.description && task.description.toLowerCase().includes(keyword)
+              const skillsMatch = task.skills && task.skills.some(skill => 
+                skill && skill.toLowerCase().includes(keyword)
+              )
+              const locationMatch = task.location && (
+                Array.isArray(task.location) 
+                  ? task.location.some(loc => loc && loc.toLowerCase().includes(keyword))
+                  : task.location.toLowerCase().includes(keyword)
+              )
+              
+              return titleMatch || descriptionMatch || skillsMatch || locationMatch
+            })
           }
           
           // 将任务添加到任务列表
@@ -281,6 +369,26 @@ export default {
     viewTaskDetail(taskId) {
       console.log('查看任务详情:', taskId)
       // 这里可以实现导航到任务详情页面的逻辑
+    },
+    
+    // 处理搜索输入（防抖）
+    handleSearchInput() {
+      // 清除之前的定时器
+      if (this.searchTimer) {
+        clearTimeout(this.searchTimer)
+      }
+      
+      // 设置新的定时器
+      this.searchTimer = setTimeout(() => {
+        this.performSearch()
+      }, 300) // 300ms防抖
+    },
+    
+    // 执行搜索
+    performSearch() {
+      // 重置分页并重新加载数据
+      this.currentPage = 1
+      this.loadTasks(true)
     }
   }
 }
@@ -291,6 +399,7 @@ export default {
   min-height: 100vh;
   background-color: #f8f8f8;
   padding-bottom: 60px;
+  position: relative;
 }
 
 /* 顶部导航栏 */
@@ -357,6 +466,41 @@ export default {
 
 .filter-icon {
   flex-shrink: 0;
+}
+
+/* 搜索框样式 */
+.search-container {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 20px;
+  padding: 4px 12px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 0;
+  font-size: 14px;
+  outline: none;
+  color: #333;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 筛选面板 */
@@ -541,12 +685,41 @@ export default {
   margin-bottom: 12px;
 }
 
+.task-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .task-content .task-title {
   font-size: 15px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 8px 0;
+  margin: 0;
   text-align: left;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-skills-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.skill-tag-inline {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .task-description {
@@ -616,6 +789,94 @@ export default {
   font-size: 15px;
   color: #999;
   margin-bottom: 24px;
+}
+
+/* 城市筛选下拉面板 */
+.city-filter-dropdown {
+  position: absolute;
+  top: 100px; /* 位于筛选栏下方 */
+  left: 16px;
+  right: 16px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+/* 筛选面板头部 */
+.filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.filter-panel-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 级联选择器容器 */
+.cascader-container {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 筛选操作按钮 */
+.filter-actions {
+  display: flex;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.reset-btn,
+.confirm-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.reset-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.confirm-btn {
+  background-color: #1989fa;
+  color: white;
+}
+
+/* 技能标签样式 */
+.task-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.skill-tag {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 /* 响应式设计 */

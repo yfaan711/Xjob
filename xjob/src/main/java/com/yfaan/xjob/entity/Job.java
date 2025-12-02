@@ -9,7 +9,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -45,7 +44,7 @@ public class Job implements Serializable {
     /**
      * 价格
      */
-    private BigDecimal price;
+    private Integer price;
 
     /**
      * 工作介绍
@@ -55,11 +54,13 @@ public class Job implements Serializable {
     /**
      * 工作时长
      */
-    private String workDuration;
+    @TableField("work_duration")
+    private Integer workDuration;
 
     /**
      * 工作城市
      */
+    @TableField("work_city")
     private String workCity;
 
     /**

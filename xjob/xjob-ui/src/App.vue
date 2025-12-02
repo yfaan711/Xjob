@@ -90,20 +90,54 @@ export default {
       loginStateChange: 0
     }
   },
-  mounted() {
-    // 组件挂载时不自动检查登录状态，避免一启动就显示登录状态
-    // 如果需要恢复登录状态，可以通过用户主动触发
-    console.log('应用启动，默认未登录状态')
+  async mounted() {
+    // 组件挂载时检查登录状态
+    await this.checkLoginStatus()
     
-    // 短暂延迟后显示登录提示
+    // 短暂延迟后显示登录提示（仅在未登录时）
     setTimeout(() => {
-      this.showLoginPrompt = true
+      if (!this.isLoggedIn) {
+        this.showLoginPrompt = true
+      }
     }, 1000)
   },
   methods: {
     // 页面切换方法
     changePage(pageName) {
       this.currentPage = pageName
+    },
+    
+    // 检查登录状态
+    async checkLoginStatus() {
+      try {
+        // 检查本地是否有token
+        const token = localStorage.getItem('token')
+        if (!token) {
+          console.log('未找到token，保持未登录状态')
+          return
+        }
+        
+        // 导入用户API
+        const { getCurrentUser } = await import('./api/user.js')
+        
+        // 验证token是否有效
+        const response = await getCurrentUser()
+        if (response && response.success) {
+          // token有效，设置为已登录状态
+          this.isLoggedIn = true
+          console.log('检测到有效token，已设置为登录状态')
+        } else {
+          // token无效，清除本地存储
+          localStorage.removeItem('token')
+          this.isLoggedIn = false
+          console.log('token无效，已清除并设置为未登录状态')
+        }
+      } catch (error) {
+        console.error('检查登录状态失败:', error)
+        // 出错时清除token并设置为未登录状态
+        localStorage.removeItem('token')
+        this.isLoggedIn = false
+      }
     },
     
     // 显示AI助手页面
@@ -138,6 +172,8 @@ export default {
     handleLogout() {
       this.isLoggedIn = false
       this.currentPage = 'square'
+      // 清除本地存储的token
+      localStorage.removeItem('token')
       console.log('用户退出登录')
     },
     

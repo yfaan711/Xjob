@@ -27,9 +27,13 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         if (job.getJob() == null || job.getJob().trim().isEmpty()) {
             return Result.fail("职位名称不能为空");
         }
-        //4.保存job
+        //4.设置默认值
+        if (job.getWorkDuration() == null) {
+            job.setWorkDuration(0);
+        }
+        //5.保存job
         job.setUserId(userId.intValue()); // 修改为Integer类型
-        save( job);
+        save(job);
         return Result.ok(job);
     }
 
@@ -50,7 +54,11 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         if(!job1.getUserId().equals(userId.intValue())){ // 修改为Integer类型
             return Result.fail("该 job 不属于该用户");
         }
-        //3.更新 job
+        //3.设置默认值
+        if (job.getWorkDuration() == null) {
+            job.setWorkDuration(0);
+        }
+        //4.更新 job
         updateById(job);
         return Result.ok(getById(job.getId()));
     }
@@ -68,7 +76,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
             return Result.fail("该 job 不属于该用户");
         }
         //3.删除 job
-        removeById(jobId);
+        super.removeById(jobId);
         return Result.ok("已删除job");
     }
     

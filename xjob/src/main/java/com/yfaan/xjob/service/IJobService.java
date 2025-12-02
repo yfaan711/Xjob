@@ -12,6 +12,7 @@ public interface IJobService extends IService<Job> {
     Result update(Long userId, Job job);
 
     Result removeById(Long jobId);
-    
+
+    //分页查询
     Result jobList(Integer current, Integer size);
 }

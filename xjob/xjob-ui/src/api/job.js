@@ -68,11 +68,11 @@ export const createJob = async (jobData) => {
   // 转换字段名以匹配后端SQL表结构
   const formattedJobData = {
     job: jobData.title, // 将jobName改为job
-    skill: JSON.stringify(jobData.skills || []),
+    skill: Array.isArray(jobData.skills) ? JSON.stringify(jobData.skills) : '[]',
     introduce: jobData.description,
-    work_duration: jobData.experience !== undefined && jobData.experience !== null ? jobData.experience : 0,
-    workCity: JSON.stringify(jobData.cities || []), // 将work_city改为workCity
-    price: jobData.price || 0
+    workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
+    workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
+    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
   }
   
   return request('/api/job/add', {
@@ -91,11 +91,11 @@ export const updateJob = async (jobData) => {
   const formattedJobData = {
     id: jobData.id,
     job: jobData.title, // 将jobName改为job
-    skill: JSON.stringify(jobData.skills || []),
+    skill: Array.isArray(jobData.skills) ? JSON.stringify(jobData.skills) : '[]',
     introduce: jobData.description,
-    work_duration: jobData.experience !== undefined && jobData.experience !== null ? jobData.experience : 0,
-    workCity: JSON.stringify(jobData.cities || []), // 将work_city改为workCity
-    price: jobData.price || 0
+    workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
+    workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
+    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
   }
   
   return request('/api/job/update', {

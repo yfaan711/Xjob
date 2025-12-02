@@ -14,7 +14,7 @@
           <span class="logo-text">X</span>
         </div>
       </div>
-      <h1 class="app-name">Xjob</h1>
+      <h1 class="app-name">X job</h1>
       <p class="slogan">传递每个人的价值</p>
     </div>
     

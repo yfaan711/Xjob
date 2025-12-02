@@ -37,7 +37,7 @@
           <path d="M9 17L13 17" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span class="nav-text">技能广场</span>
+      <span class="nav-text">业务广场</span>
     </div>
     
     <!-- 发布按钮 - 改为普通导航项 -->
