@@ -4,7 +4,11 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.model.PutObjectRequest;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yfaan.xjob.config.OssProperties;
 import com.yfaan.xjob.dto.LoginFormDTO;
 import com.yfaan.xjob.dto.Result;
 import com.yfaan.xjob.dto.UserDTO;
@@ -16,8 +20,11 @@ import com.yfaan.xjob.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.io.InputStream;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +38,10 @@ import static com.yfaan.xjob.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private OSS ossClient;
+    @Resource
+    private OssProperties ossProperties;
     @Override
     //发送短信验证码
     public Result sendCode(String phone) {
@@ -165,5 +176,71 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 6. 返回更新后的 DTO
         return Result.ok(updatedUserDTO);
+    }
+
+    @Override
+    public Result updateAvatar(MultipartFile file) {
+        UserDTO currentUser = UserHolder.getUser();
+        if (currentUser == null) {
+            return Result.fail("请先登录");
+        }
+        // 前端未选择文件时直接提示
+        if (file == null || file.isEmpty()) {
+            return Result.fail("请选择要上传的头像");
+        }
+        // OSS 配置缺失时阻止上传，避免调用失败
+        if (StrUtil.hasBlank(ossProperties.getBucketName(), ossProperties.getEndpoint(), ossProperties.getAccessKeyId(), ossProperties.getAccessKeySecret(), ossProperties.getPublicDomain())) {
+            return Result.fail("未配置OSS存储");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String suffix = "";
+        if (StrUtil.isNotBlank(originalFilename) && originalFilename.contains(".")) {
+            suffix = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        }
+        String objectName = "avatars/" + currentUser.getId() + "/" + UUID.randomUUID(true) + suffix;
+
+        try (InputStream inputStream = file.getInputStream()) {
+            // 上传到阿里云 OSS 指定 bucket
+            PutObjectRequest putObjectRequest = new PutObjectRequest(ossProperties.getBucketName(), objectName, inputStream);
+            ossClient.putObject(putObjectRequest);
+        } catch (IOException e) {
+            log.error("上传头像失败", e);
+            return Result.fail("上传失败，请稍后重试");
+        }
+
+        // 拼接头像的公网访问地址
+        String avatarUrl = buildPublicUrl(objectName);
+        User update = new User();
+        update.setId(currentUser.getId());
+        update.setIcon(avatarUrl);
+        // 仅更新头像字段，避免覆盖其他信息
+        boolean success = updateById(update);
+        if (!success) {
+            return Result.fail("更新头像失败");
+        }
+
+        currentUser.setIcon(avatarUrl);
+        String token = UserHolder.getToken();
+        if (token != null) {
+            Map<String, Object> userMap = BeanUtil.beanToMap(
+                    currentUser, new HashMap<>(),
+                    CopyOptions.create()
+                            .setIgnoreNullValue(true)
+                            .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString())
+            );
+            stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
+        }
+
+        return Result.ok(avatarUrl);
+    }
+
+    private String buildPublicUrl(String objectName) {
+        String domain = ossProperties.getPublicDomain();
+        if (domain.endsWith("/")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        // OSS 域名后追加对象路径得到完整访问 URL
+        return domain + "/" + objectName;
     }
 }

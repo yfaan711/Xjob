@@ -11,10 +11,9 @@ import com.yfaan.xjob.service.IUserService;
 import com.yfaan.xjob.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
-
 @Slf4j //日志
 @RestController
 @RequestMapping("/user")
@@ -104,5 +103,10 @@ public class UserController {
     @PostMapping("/info/update")
     public Result updateInfo(@RequestBody UserInfoDTO userInfoDTO) {
         return userInfoService.update(userInfoDTO);
+    }
+
+    @PostMapping("/avatar")
+    public Result uploadAvatar(@RequestPart("file") MultipartFile file) {
+        return userService.updateAvatar(file);
     }
 }

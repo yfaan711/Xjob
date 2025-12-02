@@ -29,8 +29,13 @@
                 accept="image/*" 
                 style="display: none;"
               />
-              <button type="button" @click="$refs.avatarInput.click()" class="upload-button">
-                更换头像
+              <button
+                type="button"
+                @click="$refs.avatarInput.click()"
+                class="upload-button"
+                :disabled="isUploadingAvatar"
+              >
+                {{ isUploadingAvatar ? '上传中...' : '更换头像' }}
               </button>
             </div>
           </div>
@@ -135,13 +140,14 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { updateUserInfo, updateUserProfile, getCurrentUser, getUserInfo } from '../api/user.js'
+import { updateUserInfo, updateUserProfile, getCurrentUser, getUserInfo, uploadAvatar } from '../api/user.js'
 
 export default {
   name: 'EditProfile',
   setup(props, { emit }) {
     const isSaving = ref(false)
     const avatarInput = ref(null)
+    const isUploadingAvatar = ref(false)
     
     // 表单数据
     const formData = reactive({
@@ -195,21 +201,33 @@ export default {
     }
     
     // 处理头像上传
-    const handleAvatarUpload = (event) => {
+    const handleAvatarUpload = async (event) => {
       const file = event.target.files[0]
-      if (file) {
-        // 这里只是预览，实际项目中需要上传到服务器
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          formData.avatar = e.target.result
+      if (!file) return
+
+      const previousAvatar = formData.avatar
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        formData.avatar = e.target.result
+      }
+      reader.readAsDataURL(file)
+
+      isUploadingAvatar.value = true
+      try {
+        const response = await uploadAvatar(file)
+        if (response?.data) {
+          formData.avatar = response.data
+          alert('头像上传成功')
+        } else {
+          formData.avatar = previousAvatar
+          alert(response?.errorMsg || '上传头像失败，请稍后重试')
         }
-        reader.readAsDataURL(file)
-        
-        // 上传头像到服务器
-        const formData = new FormData()
-        formData.append('file', file)
-        // 这里应该调用上传接口
-        console.log('上传头像文件:', file)
+      } catch (error) {
+        formData.avatar = previousAvatar
+        alert(error.errorMsg || '上传头像失败，请稍后重试')
+      } finally {
+        isUploadingAvatar.value = false
+        event.target.value = ''
       }
     }
     
@@ -234,8 +252,7 @@ export default {
       try {
         // 1. 保存用户基本信息（nickName）
         const userUpdateData = {
-          nickName: formData.nickname
-          // 不包含icon字段，因为后端还没有实现文件上传接口
+          nickName: formData.nickname // 头像通过独立接口更新
         }
         await updateUserInfo(userUpdateData)
         
@@ -285,6 +302,7 @@ export default {
       formData,
       isSaving,
       avatarInput,
+      isUploadingAvatar,
       today,
       handleAvatarUpload,
       saveProfile,

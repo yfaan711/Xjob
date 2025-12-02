@@ -230,6 +230,53 @@ export const updateUserInfo = async (userData) => {
 };
 
 /**
+ * 上传用户头像
+ * @param {File} file - 头像文件
+ * @returns {Promise<Object>} 响应数据
+ */
+export const uploadAvatar = async (file) => {
+  if (!file) {
+    throw {
+      success: false,
+      errorMsg: '请选择要上传的头像文件',
+      data: null
+    };
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/user/avatar', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'authorization': token // 添加认证信息
+      },
+      body: formData,
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.errorMsg || `上传头像失败，状态码: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('上传头像响应:', data);
+    return data;
+  } catch (error) {
+    console.error('上传头像失败:', error);
+    throw {
+      success: false,
+      errorMsg: error.message || '上传头像失败，请稍后重试',
+      data: null
+    };
+  }
+};
+
+/**
  * 更新用户详细信息（city, introduce, gender, birthday）
  * @param {Object} profileData - 个人资料数据
  * @returns {Promise<Object>} 响应数据

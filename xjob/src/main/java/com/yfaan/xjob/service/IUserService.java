@@ -5,8 +5,7 @@ import com.yfaan.xjob.dto.LoginFormDTO;
 import com.yfaan.xjob.dto.Result;
 import com.yfaan.xjob.dto.UserDTO;
 import com.yfaan.xjob.entity.User;
-
-import javax.servlet.http.HttpSession;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface IUserService extends IService<User> {
     //发送短信验证码
@@ -17,4 +16,6 @@ public interface IUserService extends IService<User> {
     Result logout(String token);
     //修改用户信息
     Result update(UserDTO userDTO);
+
+    Result updateAvatar(MultipartFile file);
 }
