@@ -184,9 +184,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (currentUser == null) {
             return Result.fail("请先登录");
         }
+        // 前端未选择文件时直接提示
         if (file == null || file.isEmpty()) {
             return Result.fail("请选择要上传的头像");
         }
+        // OSS 配置缺失时阻止上传，避免调用失败
         if (StrUtil.hasBlank(ossProperties.getBucketName(), ossProperties.getEndpoint(), ossProperties.getAccessKeyId(), ossProperties.getAccessKeySecret(), ossProperties.getPublicDomain())) {
             return Result.fail("未配置OSS存储");
         }
@@ -199,6 +201,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         String objectName = "avatars/" + currentUser.getId() + "/" + UUID.randomUUID(true) + suffix;
 
         try (InputStream inputStream = file.getInputStream()) {
+            // 上传到阿里云 OSS 指定 bucket
             PutObjectRequest putObjectRequest = new PutObjectRequest(ossProperties.getBucketName(), objectName, inputStream);
             ossClient.putObject(putObjectRequest);
         } catch (IOException e) {
@@ -206,10 +209,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.fail("上传失败，请稍后重试");
         }
 
+        // 拼接头像的公网访问地址
         String avatarUrl = buildPublicUrl(objectName);
         User update = new User();
         update.setId(currentUser.getId());
         update.setIcon(avatarUrl);
+        // 仅更新头像字段，避免覆盖其他信息
         boolean success = updateById(update);
         if (!success) {
             return Result.fail("更新头像失败");
@@ -235,6 +240,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (domain.endsWith("/")) {
             domain = domain.substring(0, domain.length() - 1);
         }
+        // OSS 域名后追加对象路径得到完整访问 URL
         return domain + "/" + objectName;
     }
 }
