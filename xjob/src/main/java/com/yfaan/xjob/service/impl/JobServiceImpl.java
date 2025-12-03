@@ -81,15 +81,15 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
     
     @Override
-    public Result jobList(Integer current, Integer size) {
+    public Result jobList(Integer current, Integer size, Integer jobType) {
         // 使用自定义查询关联用户信息
         Page<JobWithUserDTO> page = new Page<>(current, size);
-        Page<JobWithUserDTO> resultPage = getBaseMapper().selectJobWithUser(page);
-        
+        Page<JobWithUserDTO> resultPage = getBaseMapper().selectJobWithUser(page, jobType);
+
         // 查询总数
-        Long total = getBaseMapper().selectJobWithUserCount();
+        Long total = getBaseMapper().selectJobWithUserCount(jobType);
         resultPage.setTotal(total);
-        
+
         return Result.ok(resultPage.getRecords(), resultPage.getTotal());
     }
 

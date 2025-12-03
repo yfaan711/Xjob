@@ -81,13 +81,27 @@
         <form @submit.prevent="submitForm">
           <div class="form-group">
             <label class="form-label">业务名称</label>
-            <input 
+            <input
               type="text" 
               v-model="formData.title" 
               class="form-input" 
               placeholder="请输入业务名称" 
               required
             />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">业务类型</label>
+            <select v-model="formData.jobType" class="form-input">
+              <option disabled value="">请选择业务类型</option>
+              <option
+                v-for="type in jobTypes"
+                :key="type.id"
+                :value="type.id"
+              >
+                {{ type.name }}
+              </option>
+            </select>
           </div>
           
           <div class="form-group">
@@ -182,7 +196,7 @@
 </template>
 
 <script>
-import { getJobs, createJob, updateJob, deleteJob } from '../api/job.js'
+import { getJobs, createJob, updateJob, deleteJob, getJobTypes } from '../api/job.js'
 import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
@@ -201,6 +215,7 @@ export default {
       messageType: 'error', // 'success' 或 'error'
       messageTimer: null,
       options: provinceAndCityData,
+      jobTypes: [],
       formData: {
         id: '',
         title: '',
@@ -210,12 +225,14 @@ export default {
         experience: '',
         cities: [],
         citiesInput: '',
-        description: ''
+        description: '',
+        jobType: ''
       }
     }
   },
   mounted() {
     // 确保用户信息已加载
+    this.loadJobTypes()
     this.checkUserInfo()
   },
   methods: {
@@ -228,6 +245,18 @@ export default {
       } else {
         // 有用户信息，直接加载业务列表
         this.loadJobs()
+      }
+    },
+
+    // 加载职位类型
+    async loadJobTypes() {
+      try {
+        const response = await getJobTypes()
+        if (response && response.data) {
+          this.jobTypes = response.data
+        }
+      } catch (error) {
+        console.error('获取职位类型失败:', error)
       }
     },
     
@@ -394,7 +423,8 @@ export default {
             description: job.introduce || job.description || '',  // 兼容description字段
             location: location,
             price: job.price,
-            experience: job.workDuration !== undefined && job.workDuration !== null ? job.workDuration : (job.experience || '') // 优先使用workDuration字段，兼容旧的experience，确保不为undefined
+            experience: job.workDuration !== undefined && job.workDuration !== null ? job.workDuration : (job.experience || ''), // 优先使用workDuration字段，兼容旧的experience，确保不为undefined
+            jobType: job.jobType
           }
         })
       } catch (error) {
@@ -440,7 +470,8 @@ export default {
         experience: '',
         cities: [], // 初始化为空数组
         citiesInput: '',
-        description: ''
+        description: '',
+        jobType: ''
       }
       this.showForm = true
     },
@@ -553,7 +584,8 @@ export default {
         experience: experienceValue,
         cities: formattedCities,
         citiesInput: '',
-        description: job.introduce || job.description || ''
+        description: job.introduce || job.description || '',
+        jobType: job.jobType !== undefined && job.jobType !== null ? String(job.jobType) : ''
       }
       this.showForm = true
     },
@@ -604,7 +636,12 @@ export default {
     async submitForm() {
       // 更新技能标签
       this.updateSkills()
-      
+
+      if (!this.formData.jobType) {
+        this.showErrorMessage('请选择业务类型')
+        return
+      }
+
       this.isSubmitting = true
       try {
         // 格式化城市数据以发送到后端
@@ -769,7 +806,8 @@ export default {
         experience: '',
         cities: [], // 初始化为空数组
         citiesInput: '',
-        description: ''
+        description: '',
+        jobType: ''
       }
     },
     

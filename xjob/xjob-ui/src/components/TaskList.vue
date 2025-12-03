@@ -5,6 +5,21 @@
       <h1 class="task-title">业务广场</h1>
     </header>
     
+    <!-- 职位类型 -->
+    <div class="job-type-section" v-if="jobTypes && jobTypes.length">
+      <div class="job-type-grid">
+        <button
+          v-for="type in jobTypes"
+          :key="type.id"
+          class="job-type-btn"
+          :class="{ active: selectedJobType === type.id }"
+          @click="selectJobType(type.id)"
+        >
+          {{ type.name }}
+        </button>
+      </div>
+    </div>
+
     <!-- 筛选栏 -->
     <div class="filter-section">
       <div class="filter-scroll">
@@ -106,8 +121,11 @@
             <span class="price-amount">{{ task.price }}</span>
             <span class="price-unit">/小时</span>
           </div>
-          <div class="task-location">
-            {{ formatLocation(task.location) }}
+          <div class="task-location" v-if="task.location && task.location.length">
+            <span v-for="(city, index) in task.location" :key="index" class="location-tag">{{ city }}</span>
+          </div>
+          <div class="task-location empty" v-else>
+            未指定地点
           </div>
         </div>
       </div>
@@ -138,7 +156,7 @@
 </template>
 
 <script>
-import { getAllJobs } from '../api/job.js'
+import { getAllJobs, getJobTypes } from '../api/job.js'
 import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
@@ -156,10 +174,13 @@ export default {
       cityOptions: provinceAndCityData, // 使用 element-china-area-data 提供的数据
       defaultAvatar: 'https://picsum.photos/200/200?random=1',
       searchKeyword: '', // 搜索关键词
-      searchTimer: null // 搜索防抖定时器
+      searchTimer: null, // 搜索防抖定时器
+      jobTypes: [],
+      selectedJobType: null
     }
   },
   mounted() {
+    this.loadJobTypes()
     this.loadTasks(true)
     window.addEventListener('scroll', this.handleScroll)
   },
@@ -170,14 +191,6 @@ export default {
     // 处理图片加载错误，显示默认头像
     handleImageError(event) {
       event.target.src = this.defaultAvatar
-    },
-    
-    // 格式化城市显示
-    formatLocation(location) {
-      if (Array.isArray(location)) {
-        return location.join(' / ')
-      }
-      return location
     },
     
     // 处理城市选择变更
@@ -207,27 +220,43 @@ export default {
       } else {
         this.selectedCityLabel = ''
       }
-      
       this.showCityFilter = false
       // 重新加载数据
       this.loadTasks(true)
+    },
+
+    // 加载职位类型
+    async loadJobTypes() {
+      try {
+        const response = await getJobTypes()
+        if (response && response.data) {
+          this.jobTypes = response.data
+        }
+      } catch (error) {
+        console.error('加载职位类型失败:', error)
+      }
     },
     
     // 加载任务数据
     async loadTasks(reset = false) {
       if (this.loading) return
-      
+
+      if (reset) {
+        this.currentPage = 1
+        this.hasMore = true
+      }
+
       this.loading = true
-      
+
       try {
         // 调用API获取分页数据
-        const response = await getAllJobs(this.currentPage, this.pageSize)
+        const response = await getAllJobs(this.currentPage, this.pageSize, this.selectedJobType)
         
         if (response && response.data) {
           // 转换后端数据为前端显示格式
           const newTasks = response.data.map(job => {
             // 解析城市数据
-            let location = '未指定地点'
+            let location = []
             try {
               if (typeof job.workCity === 'string' && job.workCity) {
                 if (job.workCity.startsWith('[')) {
@@ -236,8 +265,13 @@ export default {
                     // 修改：显示所有城市，而不是只显示第一个
                     location = cities
                   }
+                } else if (job.workCity.includes(',')) {
+                  location = job.workCity
+                    .split(',')
+                    .map(city => city.trim())
+                    .filter(Boolean)
                 } else {
-                  location = [job.workCity]
+                  location = [job.workCity.trim()]
                 }
               } else if (Array.isArray(job.workCity) && job.workCity.length > 0) {
                 location = job.workCity
@@ -250,7 +284,14 @@ export default {
             let skills = []
             try {
               if (typeof job.skill === 'string' && job.skill) {
-                skills = JSON.parse(job.skill)
+                if (job.skill.trim().startsWith('[')) {
+                  skills = JSON.parse(job.skill)
+                } else {
+                  skills = job.skill
+                    .split(',')
+                    .map(skill => skill.trim())
+                    .filter(Boolean)
+                }
               } else if (Array.isArray(job.skill)) {
                 skills = job.skill
               }
@@ -364,6 +405,14 @@ export default {
       // 重新加载数据
       this.loadTasks(true)
     },
+
+    // 选择职位类型
+    selectJobType(typeId) {
+      this.selectedJobType = this.selectedJobType === typeId ? null : typeId
+      this.currentPage = 1
+      this.hasMore = true
+      this.loadTasks(true)
+    },
     
     // 查看任务详情
     viewTaskDetail(taskId) {
@@ -400,6 +449,42 @@ export default {
   background-color: #f8f8f8;
   padding-bottom: 60px;
   position: relative;
+}
+
+/* 职位类型 */
+.job-type-section {
+  background-color: #fff;
+  padding: 12px 16px 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.job-type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px 10px;
+}
+
+.job-type-btn {
+  padding: 8px 10px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.job-type-btn.active {
+  background-color: #ffecec;
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.job-type-btn:active {
+  transform: scale(0.98);
 }
 
 /* 顶部导航栏 */
@@ -767,9 +852,25 @@ export default {
 }
 
 .task-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 12px;
   color: #999;
 }
+
+.task-location.empty {
+  color: #c0c4cc;
+}
+
+.location-tag {
+  background: #f3f4f6;
+  color: #606266;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+} 
 
 /* 空状态 */
 .empty-state {
