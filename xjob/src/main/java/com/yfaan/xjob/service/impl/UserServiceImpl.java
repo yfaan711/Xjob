@@ -142,6 +142,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.fail("无效的token");
     }
 
+    //更新用户信息（用户名）
     @Override
     public Result update(UserDTO userDTO) {
         // 1. 获取当前登录用户
@@ -178,6 +179,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.ok(updatedUserDTO);
     }
 
+
+    //更新用户头像
     @Override
     public Result updateAvatar(MultipartFile file) {
         UserDTO currentUser = UserHolder.getUser();

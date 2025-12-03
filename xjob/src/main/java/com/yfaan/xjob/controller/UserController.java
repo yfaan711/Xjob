@@ -104,7 +104,9 @@ public class UserController {
     public Result updateInfo(@RequestBody UserInfoDTO userInfoDTO) {
         return userInfoService.update(userInfoDTO);
     }
-
+    /**
+     * 修改头像
+     * */
     @PostMapping("/avatar")
     public Result uploadAvatar(@RequestPart("file") MultipartFile file) {
         return userService.updateAvatar(file);

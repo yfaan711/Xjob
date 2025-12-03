@@ -16,6 +16,6 @@ public interface IUserService extends IService<User> {
     Result logout(String token);
     //修改用户信息
     Result update(UserDTO userDTO);
-
+    //修改头像
     Result updateAvatar(MultipartFile file);
 }

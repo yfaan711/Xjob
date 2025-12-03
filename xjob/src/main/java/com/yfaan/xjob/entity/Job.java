@@ -40,6 +40,10 @@ public class Job implements Serializable {
      * 技能要求
      */
     private String skill;
+    /**
+     * 职位类型
+     */
+    private Integer jobType;
 
     /**
      * 价格

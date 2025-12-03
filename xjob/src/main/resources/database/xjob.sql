@@ -135,6 +135,7 @@ CREATE TABLE `tb_job` (
                           `job` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT '职位名称',
                           `skill` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '擅长领域',
                           `introduce` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '简介',
+                          'type_id' int unsigned NOT NULL COMMENT '职位类别id',
                           `price` int DEFAULT NULL COMMENT '单价/次',
                           `work_duration` int unsigned NOT NULL COMMENT '从业时长（月）',
                           `work_city` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '服务城市，JSON格式存储多个城市',
@@ -336,7 +337,24 @@ CREATE TABLE `tb_voucher_order` (
                                     KEY `idx_status_order_time` (`status`,`order_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT COMMENT='代金券订单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+--
+-- Table structure for table `tb_job_type`
+--
+
+DROP TABLE IF EXISTS `tb_job_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tb_job_type` (
+                               `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+                               `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '类型名称',
+                               `sort` int DEFAULT '0' COMMENT '排序优先级',
+                               `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                               `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                               PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT COMMENT='职位类型表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, '+00:00') */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
