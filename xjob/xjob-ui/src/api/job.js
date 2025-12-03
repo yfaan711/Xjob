@@ -126,13 +126,17 @@ export const getJobById = async (jobId) => {
 
 // 分页获取所有工作列表
 export const getAllJobs = async (current = 1, size = 10, jobType) => {
-  let url = `/api/job/page?current=${current}&size=${size}`
+  const params = new URLSearchParams({
+    current: String(current),
+    size: String(size)
+  })
 
-  if (jobType !== undefined && jobType !== null) {
-    url += `&jobType=${jobType}`
+  // 仅当 jobType 有效且非空时才传递，避免后端类型转换错误
+  if (jobType !== undefined && jobType !== null && jobType !== '') {
+    params.append('jobType', String(parseInt(jobType, 10)))
   }
 
-  return request(url)
+  return request(`/api/job/page?${params.toString()}`)
 }
 
 // 获取全部职位类型
