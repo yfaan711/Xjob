@@ -72,7 +72,8 @@ export const createJob = async (jobData) => {
     introduce: jobData.description,
     workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
     workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
-    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
+    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0,
+    jobType: jobData.jobType !== undefined && jobData.jobType !== null ? parseInt(jobData.jobType) : null
   }
   
   return request('/api/job/add', {
@@ -86,7 +87,7 @@ export const updateJob = async (jobData) => {
   if (!jobData.id) {
     throw new Error('缺少业务ID')
   }
-  
+
   // 转换字段名以匹配后端SQL表结构
   const formattedJobData = {
     id: jobData.id,
@@ -95,7 +96,8 @@ export const updateJob = async (jobData) => {
     introduce: jobData.description,
     workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
     workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
-    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
+    price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0,
+    jobType: jobData.jobType !== undefined && jobData.jobType !== null ? parseInt(jobData.jobType) : null
   }
   
   return request('/api/job/update', {
@@ -123,6 +125,17 @@ export const getJobById = async (jobId) => {
 }
 
 // 分页获取所有工作列表
-export const getAllJobs = async (current = 1, size = 10) => {
-  return request(`/api/job/page?current=${current}&size=${size}`)
+export const getAllJobs = async (current = 1, size = 10, jobType) => {
+  let url = `/api/job/page?current=${current}&size=${size}`
+
+  if (jobType !== undefined && jobType !== null) {
+    url += `&jobType=${jobType}`
+  }
+
+  return request(url)
+}
+
+// 获取全部职位类型
+export const getJobTypes = async () => {
+  return request('/api/jobType/list')
 }

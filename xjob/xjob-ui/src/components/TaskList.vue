@@ -5,6 +5,21 @@
       <h1 class="task-title">业务广场</h1>
     </header>
     
+    <!-- 职位类型 -->
+    <div class="job-type-section" v-if="jobTypes && jobTypes.length">
+      <div class="job-type-grid">
+        <button
+          v-for="type in jobTypes"
+          :key="type.id"
+          class="job-type-btn"
+          :class="{ active: selectedJobType === type.id }"
+          @click="selectJobType(type.id)"
+        >
+          {{ type.name }}
+        </button>
+      </div>
+    </div>
+
     <!-- 筛选栏 -->
     <div class="filter-section">
       <div class="filter-scroll">
@@ -138,7 +153,7 @@
 </template>
 
 <script>
-import { getAllJobs } from '../api/job.js'
+import { getAllJobs, getJobTypes } from '../api/job.js'
 import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
@@ -156,10 +171,13 @@ export default {
       cityOptions: provinceAndCityData, // 使用 element-china-area-data 提供的数据
       defaultAvatar: 'https://picsum.photos/200/200?random=1',
       searchKeyword: '', // 搜索关键词
-      searchTimer: null // 搜索防抖定时器
+      searchTimer: null, // 搜索防抖定时器
+      jobTypes: [],
+      selectedJobType: null
     }
   },
   mounted() {
+    this.loadJobTypes()
     this.loadTasks(true)
     window.addEventListener('scroll', this.handleScroll)
   },
@@ -207,21 +225,37 @@ export default {
       } else {
         this.selectedCityLabel = ''
       }
-      
       this.showCityFilter = false
       // 重新加载数据
       this.loadTasks(true)
+    },
+
+    // 加载职位类型
+    async loadJobTypes() {
+      try {
+        const response = await getJobTypes()
+        if (response && response.data) {
+          this.jobTypes = response.data
+        }
+      } catch (error) {
+        console.error('加载职位类型失败:', error)
+      }
     },
     
     // 加载任务数据
     async loadTasks(reset = false) {
       if (this.loading) return
-      
+
+      if (reset) {
+        this.currentPage = 1
+        this.hasMore = true
+      }
+
       this.loading = true
-      
+
       try {
         // 调用API获取分页数据
-        const response = await getAllJobs(this.currentPage, this.pageSize)
+        const response = await getAllJobs(this.currentPage, this.pageSize, this.selectedJobType)
         
         if (response && response.data) {
           // 转换后端数据为前端显示格式
@@ -364,6 +398,14 @@ export default {
       // 重新加载数据
       this.loadTasks(true)
     },
+
+    // 选择职位类型
+    selectJobType(typeId) {
+      this.selectedJobType = this.selectedJobType === typeId ? null : typeId
+      this.currentPage = 1
+      this.hasMore = true
+      this.loadTasks(true)
+    },
     
     // 查看任务详情
     viewTaskDetail(taskId) {
@@ -400,6 +442,42 @@ export default {
   background-color: #f8f8f8;
   padding-bottom: 60px;
   position: relative;
+}
+
+/* 职位类型 */
+.job-type-section {
+  background-color: #fff;
+  padding: 12px 16px 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.job-type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px 10px;
+}
+
+.job-type-btn {
+  padding: 8px 10px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.job-type-btn.active {
+  background-color: #ffecec;
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.job-type-btn:active {
+  transform: scale(0.98);
 }
 
 /* 顶部导航栏 */
