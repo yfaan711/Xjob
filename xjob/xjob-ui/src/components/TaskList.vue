@@ -280,20 +280,31 @@ export default {
               console.error('解析城市数据失败:', e)
             }
             
-            // 解析业务数据
+            // 解析业务数据（同时兼容 skill 与 skills 字段，以及中英文分隔符）
+            const normalizeSkills = value => {
+              if (Array.isArray(value)) {
+                return value.filter(skill => typeof skill === 'string').map(skill => skill.trim()).filter(Boolean)
+              }
+              if (typeof value === 'string' && value.trim()) {
+                if (value.trim().startsWith('[')) {
+                  const parsed = JSON.parse(value)
+                  return Array.isArray(parsed)
+                    ? parsed.filter(skill => typeof skill === 'string').map(skill => skill.trim()).filter(Boolean)
+                    : []
+                }
+                return value
+                  .split(/[，,、]/)
+                  .map(skill => skill.trim())
+                  .filter(Boolean)
+              }
+              return []
+            }
+
             let skills = []
             try {
-              if (typeof job.skill === 'string' && job.skill) {
-                if (job.skill.trim().startsWith('[')) {
-                  skills = JSON.parse(job.skill)
-                } else {
-                  skills = job.skill
-                    .split(',')
-                    .map(skill => skill.trim())
-                    .filter(Boolean)
-                }
-              } else if (Array.isArray(job.skill)) {
-                skills = job.skill
+              skills = normalizeSkills(job.skill)
+              if (skills.length === 0) {
+                skills = normalizeSkills(job.skills)
               }
             } catch (e) {
               console.error('解析业务数据失败:', e)

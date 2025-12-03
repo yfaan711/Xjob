@@ -58,8 +58,8 @@
             </div>
           </div>
           <div class="job-info">
-            <div class="job-tags" v-if="job.skills && job.skills.length > 0">
-              <span v-for="skill in parseJsonArray(job.skills)" :key="skill" class="job-tag">{{ skill }}</span>
+            <div class="job-tags" v-if="getSkillTags(job).length > 0">
+              <span v-for="skill in getSkillTags(job)" :key="skill" class="job-tag">{{ skill }}</span>
             </div>
             <p class="job-experience" v-if="job.experience">从业时间: {{ job.experience }}年</p>
             <p class="job-price" v-if="job.price">单价: ¥{{ job.price }}/次</p>
@@ -306,9 +306,48 @@ export default {
           return value.split(',').map(item => item.trim()).filter(item => item);
         }
       }
-      
+
       // 其他情况返回空数组
       return [];
+    },
+
+    normalizeSkillList(value) {
+      if (Array.isArray(value)) {
+        return value.filter(item => typeof item === 'string').map(item => item.trim()).filter(Boolean);
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return [];
+        }
+
+        if (trimmed.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            return Array.isArray(parsed)
+              ? parsed.filter(item => typeof item === 'string').map(item => item.trim()).filter(Boolean)
+              : [];
+          } catch (e) {
+            // fall through to delimiter split
+          }
+        }
+
+        return trimmed
+          .split(/[，,、]/)
+          .map(item => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    },
+
+    getSkillTags(job) {
+      const primary = this.normalizeSkillList(job && job.skill);
+      if (primary.length > 0) {
+        return primary;
+      }
+      return this.normalizeSkillList(job && job.skills);
     },
     
     // 解析位置信息
