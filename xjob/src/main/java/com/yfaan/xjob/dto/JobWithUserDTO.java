@@ -48,6 +48,11 @@ public class JobWithUserDTO {
     private String workCity;
 
     /**
+     * 职位类型
+     */
+    private Integer jobType;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
