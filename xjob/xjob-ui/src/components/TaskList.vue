@@ -121,8 +121,11 @@
             <span class="price-amount">{{ task.price }}</span>
             <span class="price-unit">/小时</span>
           </div>
-          <div class="task-location">
-            {{ formatLocation(task.location) }}
+          <div class="task-location" v-if="task.location && task.location.length">
+            <span v-for="(city, index) in task.location" :key="index" class="location-tag">{{ city }}</span>
+          </div>
+          <div class="task-location empty" v-else>
+            未指定地点
           </div>
         </div>
       </div>
@@ -190,14 +193,6 @@ export default {
       event.target.src = this.defaultAvatar
     },
     
-    // 格式化城市显示
-    formatLocation(location) {
-      if (Array.isArray(location)) {
-        return location.join(' / ')
-      }
-      return location
-    },
-    
     // 处理城市选择变更
     handleCityChange(val) {
       console.log('城市选择变更:', val)
@@ -261,7 +256,7 @@ export default {
           // 转换后端数据为前端显示格式
           const newTasks = response.data.map(job => {
             // 解析城市数据
-            let location = '未指定地点'
+            let location = []
             try {
               if (typeof job.workCity === 'string' && job.workCity) {
                 if (job.workCity.startsWith('[')) {
@@ -270,8 +265,13 @@ export default {
                     // 修改：显示所有城市，而不是只显示第一个
                     location = cities
                   }
+                } else if (job.workCity.includes(',')) {
+                  location = job.workCity
+                    .split(',')
+                    .map(city => city.trim())
+                    .filter(Boolean)
                 } else {
-                  location = [job.workCity]
+                  location = [job.workCity.trim()]
                 }
               } else if (Array.isArray(job.workCity) && job.workCity.length > 0) {
                 location = job.workCity
@@ -284,7 +284,14 @@ export default {
             let skills = []
             try {
               if (typeof job.skill === 'string' && job.skill) {
-                skills = JSON.parse(job.skill)
+                if (job.skill.trim().startsWith('[')) {
+                  skills = JSON.parse(job.skill)
+                } else {
+                  skills = job.skill
+                    .split(',')
+                    .map(skill => skill.trim())
+                    .filter(Boolean)
+                }
               } else if (Array.isArray(job.skill)) {
                 skills = job.skill
               }
@@ -845,9 +852,25 @@ export default {
 }
 
 .task-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 12px;
   color: #999;
 }
+
+.task-location.empty {
+  color: #c0c4cc;
+}
+
+.location-tag {
+  background: #f3f4f6;
+  color: #606266;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+} 
 
 /* 空状态 */
 .empty-state {
