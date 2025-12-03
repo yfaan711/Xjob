@@ -43,6 +43,7 @@ public class Job implements Serializable {
     /**
      * 职位类型
      */
+    @TableField("type_id")
     private Integer jobType;
 
     /**
