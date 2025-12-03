@@ -3,18 +3,28 @@
 <mapper namespace="com.yfaan.xjob.mapper.JobMapper">
 
     <select id="selectJobWithUser" resultType="com.yfaan.xjob.dto.JobWithUserDTO">
-        SELECT j.id, j.user_id as userId, j.job, j.skill, j.price, j.introduce, 
-               j.work_duration as workDuration, j.work_city as workCity, j.create_time as createTime, 
-               j.update_time as updateTime, u.nick_name as nickName, u.icon
-        FROM tb_job j 
-        LEFT JOIN tb_user u ON j.user_id = u.id 
+        SELECT j.id, j.user_id as userId, j.job, j.skill, j.price, j.introduce,
+               j.work_duration as workDuration, j.work_city as workCity, j.create_time as createTime,
+                j.update_time as updateTime, j.job_type as jobType, u.nick_name as nickName, u.icon
+        FROM tb_job j
+        LEFT JOIN tb_user u ON j.user_id = u.id
+        <where>
+            <if test="jobType != null">
+                j.job_type = #{jobType}
+            </if>
+        </where>
         ORDER BY j.create_time DESC
     </select>
-    
+
     <select id="selectJobWithUserCount" resultType="java.lang.Long">
-        SELECT COUNT(*) 
-        FROM tb_job j 
+        SELECT COUNT(*)
+        FROM tb_job j
         LEFT JOIN tb_user u ON j.user_id = u.id
+        <where>
+            <if test="jobType != null">
+                j.job_type = #{jobType}
+            </if>
+        </where>
     </select>
 
 </mapper>
