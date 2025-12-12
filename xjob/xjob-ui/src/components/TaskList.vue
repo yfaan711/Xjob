@@ -4,7 +4,22 @@
     <header class="task-header">
       <h1 class="task-title">业务广场</h1>
     </header>
-    
+
+    <!-- 业务类型选择 -->
+    <div class="type-section" v-if="jobTypes.length">
+      <div class="type-row" v-for="(row, rowIndex) in typeRows" :key="rowIndex">
+        <button
+          v-for="type in row"
+          :key="type.id"
+          class="type-button"
+          :class="{ active: selectedTypeId === type.id }"
+          @click="selectType(type.id)"
+        >
+          {{ type.name }}
+        </button>
+      </div>
+    </div>
+
     <!-- 筛选栏 -->
     <div class="filter-section">
       <div class="filter-scroll">
@@ -138,7 +153,7 @@
 </template>
 
 <script>
-import { getAllJobs } from '../api/job.js'
+import { getAllJobs, getJobTypes } from '../api/job.js'
 import { provinceAndCityData, codeToText } from 'element-china-area-data'
 
 export default {
@@ -150,6 +165,8 @@ export default {
       currentPage: 1,
       pageSize: 10,
       hasMore: true,
+      jobTypes: [],
+      selectedTypeId: null,
       showCityFilter: false,
       selectedCity: [], // 级联选择器使用数组
       selectedCityLabel: '', // 显示在筛选按钮上的城市标签
@@ -159,7 +176,17 @@ export default {
       searchTimer: null // 搜索防抖定时器
     }
   },
+  computed: {
+    typeRows() {
+      const midpoint = Math.ceil(this.jobTypes.length / 2)
+      return [
+        this.jobTypes.slice(0, midpoint),
+        this.jobTypes.slice(midpoint)
+      ]
+    }
+  },
   mounted() {
+    this.loadJobTypes()
     this.loadTasks(true)
     window.addEventListener('scroll', this.handleScroll)
   },
@@ -167,6 +194,18 @@ export default {
     window.removeEventListener('scroll', this.handleScroll)
   },
   methods: {
+    // 加载类型数据
+    async loadJobTypes() {
+      try {
+        const response = await getJobTypes()
+        if (response && response.data) {
+          this.jobTypes = response.data
+        }
+      } catch (error) {
+        console.error('加载职位类型失败:', error)
+      }
+    },
+
     // 处理图片加载错误，显示默认头像
     handleImageError(event) {
       event.target.src = this.defaultAvatar
@@ -221,7 +260,7 @@ export default {
       
       try {
         // 调用API获取分页数据
-        const response = await getAllJobs(this.currentPage, this.pageSize)
+        const response = await getAllJobs(this.currentPage, this.pageSize, this.selectedTypeId)
         
         if (response && response.data) {
           // 转换后端数据为前端显示格式
@@ -335,6 +374,15 @@ export default {
         this.loading = false
       }
     },
+
+    // 选择业务类型
+    selectType(typeId) {
+      this.selectedTypeId = this.selectedTypeId === typeId ? null : typeId
+      this.currentPage = 1
+      this.tasks = []
+      this.hasMore = true
+      this.loadTasks(true)
+    },
     
     // 处理滚动事件，实现下拉加载更多
     handleScroll() {
@@ -418,6 +466,43 @@ export default {
   color: #333;
   margin: 0;
   text-align: center;
+}
+
+/* 类型选择 */
+.type-section {
+  background-color: #fff;
+  padding: 12px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.type-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.type-button {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  background-color: #fafafa;
+  font-size: 13px;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.type-button.active {
+  background-color: #4a7dff;
+  color: #fff;
+  border-color: #4a7dff;
+  box-shadow: 0 6px 12px rgba(74, 125, 255, 0.2);
+}
+
+.type-button:active {
+  transform: translateY(1px);
 }
 
 /* 筛选栏 */

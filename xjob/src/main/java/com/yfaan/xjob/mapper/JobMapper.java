@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yfaan.xjob.dto.JobWithUserDTO;
 import com.yfaan.xjob.entity.Job;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface JobMapper extends BaseMapper<Job> {
@@ -13,11 +14,11 @@ public interface JobMapper extends BaseMapper<Job> {
      * @param page 分页参数
      * @return 职位信息列表
      */
-    Page<JobWithUserDTO> selectJobWithUser(Page<JobWithUserDTO> page);
+    Page<JobWithUserDTO> selectJobWithUser(Page<JobWithUserDTO> page, @Param("typeId") Long typeId);
     
     /**
      * 查询职位总数
      * @return 总数
      */
-    Long selectJobWithUserCount();
+    Long selectJobWithUserCount(@Param("typeId") Long typeId);
 }

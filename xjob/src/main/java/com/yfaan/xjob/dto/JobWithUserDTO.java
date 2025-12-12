@@ -38,6 +38,16 @@ public class JobWithUserDTO {
     private String introduce;
 
     /**
+     * 类型ID
+     */
+    private Long typeId;
+
+    /**
+     * 类型名称
+     */
+    private String typeName;
+
+    /**
      * 工作时长
      */
     private String workDuration;

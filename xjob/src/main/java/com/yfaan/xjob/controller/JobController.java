@@ -44,8 +44,9 @@ public class JobController {
     //分页查询所有job信息
     @GetMapping("/page")
     public Result jobList(@RequestParam(value = "current", defaultValue = "1") Integer current,
-                          @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        return jobService.jobList(current, size);
+                          @RequestParam(value = "size", defaultValue = "10") Integer size,
+                          @RequestParam(value = "typeId", required = false) Long typeId) {
+        return jobService.jobList(current, size, typeId);
     }
 
 }

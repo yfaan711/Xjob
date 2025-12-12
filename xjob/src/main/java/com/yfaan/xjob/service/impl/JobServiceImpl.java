@@ -7,6 +7,7 @@ import com.yfaan.xjob.dto.Result;
 import com.yfaan.xjob.entity.Job;
 import com.yfaan.xjob.mapper.JobMapper;
 import com.yfaan.xjob.service.IJobService;
+import com.yfaan.xjob.service.IJobTypeService;
 import com.yfaan.xjob.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,12 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobService {
+
+    private final IJobTypeService jobTypeService;
+
+    public JobServiceImpl(IJobTypeService jobTypeService) {
+        this.jobTypeService = jobTypeService;
+    }
     @Override
     public Result add(Job job){
         //1.获取userid
@@ -26,6 +33,13 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         //3.检查必填字段
         if (job.getJob() == null || job.getJob().trim().isEmpty()) {
             return Result.fail("职位名称不能为空");
+        }
+        //3.1 检查业务类型
+        if (job.getTypeId() == null) {
+            return Result.fail("请选择业务类型");
+        }
+        if (jobTypeService.getById(job.getTypeId()) == null) {
+            return Result.fail("业务类型不存在");
         }
         //4.设置默认值
         if (job.getWorkDuration() == null) {
@@ -54,6 +68,13 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
         if(!job1.getUserId().equals(userId.intValue())){ // 修改为Integer类型
             return Result.fail("该 job 不属于该用户");
         }
+        //3.校验业务类型
+        if (job.getTypeId() == null) {
+            return Result.fail("请选择业务类型");
+        }
+        if (jobTypeService.getById(job.getTypeId()) == null) {
+            return Result.fail("业务类型不存在");
+        }
         //3.设置默认值
         if (job.getWorkDuration() == null) {
             job.setWorkDuration(0);
@@ -81,15 +102,15 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements IJobS
     }
     
     @Override
-    public Result jobList(Integer current, Integer size) {
+    public Result jobList(Integer current, Integer size, Long typeId) {
         // 使用自定义查询关联用户信息
         Page<JobWithUserDTO> page = new Page<>(current, size);
-        Page<JobWithUserDTO> resultPage = getBaseMapper().selectJobWithUser(page);
-        
+        Page<JobWithUserDTO> resultPage = getBaseMapper().selectJobWithUser(page, typeId);
+
         // 查询总数
-        Long total = getBaseMapper().selectJobWithUserCount();
+        Long total = getBaseMapper().selectJobWithUserCount(typeId);
         resultPage.setTotal(total);
-        
+
         return Result.ok(resultPage.getRecords(), resultPage.getTotal());
     }
 

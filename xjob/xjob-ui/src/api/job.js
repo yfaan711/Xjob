@@ -70,6 +70,7 @@ export const createJob = async (jobData) => {
     job: jobData.title, // 将jobName改为job
     skill: Array.isArray(jobData.skills) ? JSON.stringify(jobData.skills) : '[]',
     introduce: jobData.description,
+    typeId: jobData.typeId,
     workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
     workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
     price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
@@ -93,6 +94,7 @@ export const updateJob = async (jobData) => {
     job: jobData.title, // 将jobName改为job
     skill: Array.isArray(jobData.skills) ? JSON.stringify(jobData.skills) : '[]',
     introduce: jobData.description,
+    typeId: jobData.typeId,
     workDuration: jobData.experience !== undefined && jobData.experience !== null ? parseInt(jobData.experience) : 0,
     workCity: Array.isArray(jobData.cities) ? JSON.stringify(jobData.cities) : '[]', // 将work_city改为workCity
     price: jobData.price !== undefined && jobData.price !== null ? parseInt(jobData.price) : 0
@@ -123,6 +125,12 @@ export const getJobById = async (jobId) => {
 }
 
 // 分页获取所有工作列表
-export const getAllJobs = async (current = 1, size = 10) => {
-  return request(`/api/job/page?current=${current}&size=${size}`)
+export const getAllJobs = async (current = 1, size = 10, typeId = null) => {
+  const typeQuery = typeId ? `&typeId=${typeId}` : ''
+  return request(`/api/job/page?current=${current}&size=${size}${typeQuery}`)
+}
+
+// 获取所有职位类型
+export const getJobTypes = async () => {
+  return request('/api/jobType/list')
 }

@@ -52,6 +52,12 @@ public class Job implements Serializable {
     private String introduce;
 
     /**
+     * 类型ID
+     */
+    @TableField("type_id")
+    private Long typeId;
+
+    /**
      * 工作时长
      */
     @TableField("work_duration")
